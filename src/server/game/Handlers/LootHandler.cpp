@@ -31,6 +31,7 @@
 #include "World.h"
 #include "WorldPacket.h"
 #include "WorldSession.h"
+#include "HookMgr.h"
 
 void WorldSession::HandleAutostoreLootItemOpcode(WorldPacket& recvData)
 {
@@ -211,6 +212,9 @@ void WorldSession::HandleLootMoneyOpcode(WorldPacket& /*recvData*/)
             data << uint8(1);   // "You loot..."
             SendPacket(&data);
         }
+#ifdef ELUNA
+        sHookMgr->OnLootMoney(player, loot->gold);
+#endif
 
         loot->gold = 0;
 
