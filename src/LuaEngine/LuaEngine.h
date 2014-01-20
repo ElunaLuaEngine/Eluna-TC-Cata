@@ -19,8 +19,6 @@ extern "C"
 
 typedef std::set<std::string> LoadedScripts;
 
-template<typename T> const char* GetTName();
-
 template<class T>
 struct ElunaRegister
 {
@@ -32,26 +30,50 @@ template<typename T>
 class ElunaTemplate
 {
     public:
+        static const char* tname;
+        static bool manageMemory;
+
         static int type(lua_State* L)
         {
-            lua_pushstring(L, GetTName<T>());
+            lua_pushstring(L, tname);
             return 1;
         }
 
-        static void Register(lua_State* L)
+        // If assertion fails, should check if obj really should have gc on
+        // If gc / memory management is true, may need specialized function for GetTPointer to copy object using GetNewTPointerin LuaEngine.cpp
+        static T const* GetNewTPointer(T const& obj) { ASSERT(manageMemory); return new T(obj); }
+        static T const* GetTPointer(T const& obj) { return &obj; }
+
+        static int gcT(lua_State* L)
         {
+            if (!manageMemory)
+                return 0;
+            T* obj = check(L, 1);
+            delete obj; // Deleting NULL should be safe
+            return 1;
+        }
+
+        // name will be used as type name
+        // If gc is true, lua will handle the memory management for object pushed
+        // gc should be used if pushing for example WorldPacket,
+        // that will only be needed on lua side and will not be managed by TC/mangos/<core>
+        static void Register(lua_State* L, const char* name, bool gc = false)
+        {
+            tname = name;
+            manageMemory = gc;
+
             lua_settop(L, 0); // clean stack
 
             lua_newtable(L);
             int methods = lua_gettop(L);
 
-            luaL_newmetatable(L, GetTName<T>());
+            luaL_newmetatable(L, tname);
             int metatable = lua_gettop(L);
 
             // store method table in globals so that
             // scripts can add functions in Lua
             lua_pushvalue(L, methods);
-            lua_setglobal(L, GetTName<T>());
+            lua_setglobal(L, tname);
 
             // hide metatable
             lua_pushvalue(L, methods);
@@ -70,44 +92,44 @@ class ElunaTemplate
             lua_setmetatable(L, methods);
         }
 
-        static int push(lua_State* L, T const* obj, bool gc = false)
+        template<typename C>
+        static void SetMethods(lua_State* L, ElunaRegister<C>* methodTable)
+        {
+            if (!methodTable)
+                return;
+            if (!lua_istable(L, 1))
+                return;
+            lua_pushstring(L, "GetObjectType");
+            lua_pushcclosure(L, type, 0);
+            lua_settable(L, 1);
+            for (; methodTable->name; ++methodTable)
+            {
+                lua_pushstring(L, methodTable->name);
+                lua_pushlightuserdata(L, (void*)methodTable);
+                lua_pushcclosure(L, thunk, 1);
+                lua_settable(L, 1);
+            }
+        }
+
+        static int push(lua_State* L, T const* obj)
         {
             if (!obj)
             {
                 lua_pushnil(L);
                 return lua_gettop(L);
             }
-            luaL_getmetatable(L, GetTName<T>());
+            luaL_getmetatable(L, tname);
             if (lua_isnil(L, -1))
-                luaL_error(L, "%s missing metatable", GetTName<T>());
-            int idxMt = lua_gettop(L);
+                luaL_error(L, "%s missing metatable", tname);
             T const** ptrHold = (T const**)lua_newuserdata(L, sizeof(T**));
-            int ud = lua_gettop(L);
             if (ptrHold)
             {
-                *ptrHold = obj;
-                lua_pushvalue(L, idxMt);
+                *ptrHold = GetTPointer(*obj);
+                lua_pushvalue(L, -2);
                 lua_setmetatable(L, -2);
-                char name[32];
-                tostring(name, obj);
-                lua_getfield(L, LUA_REGISTRYINDEX, "DO NOT TRASH");
-                if (lua_isnil(L, -1))
-                {
-                    luaL_newmetatable(L, "DO NOT TRASH");
-                    lua_pop(L, 1);
-                }
-                lua_getfield(L, LUA_REGISTRYINDEX, "DO NOT TRASH");
-                if (gc == false)
-                {
-                    lua_pushboolean(L, 1);
-                    lua_setfield(L, -2, name);
-                }
-                lua_pop(L, 1);
             }
-            lua_settop(L, ud);
-            lua_replace(L, idxMt);
-            lua_settop(L, idxMt);
-            return idxMt;
+            lua_replace(L, -2);
+            return lua_gettop(L);
         }
 
         static T* check(lua_State* L, int narg)
@@ -128,96 +150,16 @@ class ElunaTemplate
             return l->mfunc(L, obj);
         }
 
-        static int gcT(lua_State* L)
-        {
-            T* obj = check(L, 1);
-            if (!obj)
-                return 0;
-            lua_getfield(L, LUA_REGISTRYINDEX, "DO NOT TRASH");
-            if (lua_istable(L, -1))
-            {
-                char name[32];
-                tostring(name, obj);
-                lua_getfield(L, -1, std::string(name).c_str());
-            }
-            return 1;
-        }
-
         static int tostringT(lua_State* L)
         {
             char buff[32];
             T** ptrHold = (T**)lua_touserdata(L, 1);
             T* obj = *ptrHold;
             sprintf(buff, "%p", obj);
-            lua_pushfstring(L, "%s (%s)", GetTName<T>(), buff);
-            return 1;
-        }
-
-        inline static void tostring(char* buff, void const* obj)
-        {
-            sprintf(buff, "%p", obj);
-        }
-
-        static int index(lua_State* L)
-        {
-            lua_getglobal(L, GetTName<T>());
-            const char* key = lua_tostring(L, 2);
-            if (lua_istable(L, - 1))
-            {
-                lua_pushvalue(L, 2);
-                lua_rawget(L, -2);
-                if (lua_isnil(L, -1))
-                {
-                    lua_getmetatable(L, -2);
-                    if (lua_istable(L, -1))
-                    {
-                        lua_getfield(L, -1, "__index");
-                        if (lua_isfunction(L, -1))
-                        {
-                            lua_pushvalue(L, 1);
-                            lua_pushvalue(L, 2);
-                            lua_pcall(L, 2, 1, 0);
-                        }
-                        else if (lua_istable(L, -1))
-                            lua_getfield(L, -1, key);
-                        else
-                            lua_pushnil(L);
-                    }
-                    else
-                        lua_pushnil(L);
-                }
-                else if (lua_istable(L, -1))
-                {
-                    lua_pushvalue(L, 2);
-                    lua_rawget(L, -2);
-                }
-            }
-            else
-                lua_pushnil(L);
-            lua_insert(L, 1);
-            lua_settop(L, 1);
+            lua_pushfstring(L, "%s (%s)", tname, buff);
             return 1;
         }
 };
-
-template<typename T>
-void SetMethods(lua_State* L, ElunaRegister<T>* methodTable)
-{
-    if (!methodTable)
-        return;
-    if (!lua_istable(L, 1))
-        return;
-    lua_pushstring(L, "GetObjectType");
-    lua_pushcclosure(L, ElunaTemplate<T>::type, 0);
-    lua_settable(L, 1);
-    for (; methodTable->name; ++methodTable)
-    {
-        lua_pushstring(L, methodTable->name);
-        lua_pushlightuserdata(L, (void*)methodTable);
-        lua_pushcclosure(L, ElunaTemplate<T>::thunk, 1);
-        lua_settable(L, 1);
-    }
-}
 
 struct EventMgr
 {
@@ -240,12 +182,12 @@ struct EventMgr
         // Should never execute on dead events
         bool Execute(uint64 time, uint32 diff);
 
-        bool hasObject; // Dont call event if object no longer exists
-        Object* obj;    // Object to push
+        EventProcessor* events; // Pointer to events (holds the timed event)
         int funcRef;    // Lua function reference ID, also used as event ID
         uint32 delay;   // Delay between event calls
         uint32 calls;   // Amount of calls to make, 0 for infinite
-        EventProcessor* events; // Pointer to events (holds the timed event)
+        Object* obj;    // Object to push
+        bool hasObject; // Dont call event if object no longer exists
     };
 
     // Updates all processors stored in the manager
@@ -387,9 +329,8 @@ class Eluna
         lua_State* L;
         EventMgr m_EventMgr;
 
-        typedef std::map<int, int> ElunaBindingMap;
-        typedef UNORDERED_MAP<uint32, ElunaBindingMap> ElunaEntryMap;
         struct ElunaBind;
+        std::map<int, std::vector<int> > PacketEventBindings;
         std::map<int, std::vector<int> > ServerEventBindings;
         std::map<int, std::vector<int> > PlayerEventBindings;
         std::map<int, std::vector<int> > VehicleEventBindings;
@@ -409,7 +350,7 @@ class Eluna
         void BeginCall(int fReference);
         bool ExecuteCall(uint8 params, uint8 res);
         void EndCall(uint8 res);
-        void LoadDirectory(char* directory, LoadedScripts* scr);
+        void LoadDirectory(const char* directory, LoadedScripts* scr);
         // Pushes
         void Push(lua_State*); // nil
         void Push(lua_State*, const uint64);
@@ -529,6 +470,12 @@ class Eluna
         {
             L = NULL;
 
+            for (int i = 0; i < NUM_OPCODE_HANDLERS; ++i)
+            {
+                std::vector<int> _vector;
+                PacketEventBindings.insert(std::pair<int, std::vector<int> >(i, _vector));
+            }
+
             for (int i = 0; i < SERVER_EVENT_COUNT; ++i)
             {
                 std::vector<int> _vector;
@@ -603,6 +550,7 @@ class Eluna
                     luaL_unref(L, LUA_REGISTRYINDEX, (*it));
                 itr->second.clear();
             }
+            PacketEventBindings.clear();
             ServerEventBindings.clear();
             PlayerEventBindings.clear();
             VehicleEventBindings.clear();
@@ -621,12 +569,17 @@ class Eluna
 
         struct ElunaBind
         {
+            typedef std::map<int, int> ElunaBindingMap;
+            typedef UNORDERED_MAP<uint32, ElunaBindingMap> ElunaEntryMap;
+
             void Clear(); // unregisters all registered functions and clears all registered events from the bind std::maps (reset)
             void Insert(uint32 entryId, uint32 eventId, int funcRef); // Inserts a new registered event
 
             // Gets the function ref of an entry for an event
             int GetBind(uint32 entryId, uint32 eventId)
             {
+                if (Bindings.empty())
+                    return 0;
                 ElunaEntryMap::iterator itr = Bindings.find(entryId);
                 if (itr == Bindings.end())
                     return 0;
@@ -637,6 +590,8 @@ class Eluna
             // Gets the binding std::map containing all registered events with the function refs for the entry
             ElunaBindingMap* GetBindMap(uint32 entryId)
             {
+                if (Bindings.empty())
+                    return NULL;
                 ElunaEntryMap::iterator itr = Bindings.find(entryId);
                 if (itr == Bindings.end())
                     return NULL;
@@ -706,11 +661,11 @@ class Eluna
                 return true;
             }
 
+            bool i_nearest;
             WorldObject const* i_obj;
             float i_range;
             uint16 i_typeMask;
             uint32 i_entry;
-            bool i_nearest;
             uint32 i_hostile;
 
             WorldObjectInRangeCheck(WorldObjectInRangeCheck const&);

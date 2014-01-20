@@ -6,6 +6,7 @@
 
 #include "LuaEngine.h"
 #include "HookMgr.h"
+#include "WorldSocket.h"
 
 void HookMgr::OnWorldUpdate(uint32 diff)
 {
@@ -1152,7 +1153,110 @@ void HookMgr::OnExpire(AuctionHouseObject* ah)
     }
 }
 
-struct HookMgr::ElunaWorldAI : public WorldScript
+// Packet
+bool HookMgr::OnPacketSend(WorldSession* session, WorldPacket& packet)
+{
+    Player* player = NULL;
+    if (session)
+        player = session->GetPlayer();
+    bool Result = true;
+    for (std::vector<int>::const_iterator itr = sEluna->ServerEventBindings[SERVER_EVENT_ON_PACKET_SEND].begin();
+        itr != sEluna->ServerEventBindings[SERVER_EVENT_ON_PACKET_SEND].end(); ++itr)
+    {
+        sEluna->BeginCall((*itr));
+        sEluna->Push(sEluna->L, SERVER_EVENT_ON_PACKET_SEND);
+        sEluna->Push(sEluna->L, &packet);
+        sEluna->Push(sEluna->L, player);
+        if (sEluna->ExecuteCall(3, 1))
+        {
+            lua_State* L = sEluna->L;
+            if (!lua_isnoneornil(L, 1))
+            {
+                WorldPacket* data = sEluna->CHECK_PACKET(L, 1);
+                if (data)
+                    packet = *data;
+                if (!lua_toboolean(L, 1))
+                    Result = false;
+            }
+            sEluna->EndCall(1);
+        }
+    }
+    for (std::vector<int>::const_iterator itr = sEluna->PacketEventBindings[packet.GetOpcode()].begin();
+        itr != sEluna->PacketEventBindings[packet.GetOpcode()].end(); ++itr)
+    {
+        sEluna->BeginCall((*itr));
+        sEluna->Push(sEluna->L, SERVER_EVENT_ON_PACKET_SEND);
+        sEluna->Push(sEluna->L, &packet);
+        sEluna->Push(sEluna->L, player);
+        if (sEluna->ExecuteCall(3, 1))
+        {
+            lua_State* L = sEluna->L;
+            if (!lua_isnoneornil(L, 1))
+            {
+                WorldPacket* data = sEluna->CHECK_PACKET(L, 1);
+                if (data)
+                    packet = *data;
+                if (!lua_toboolean(L, 1))
+                    Result = false;
+            }
+            sEluna->EndCall(1);
+        }
+    }
+    return Result;
+}
+
+bool HookMgr::OnPacketReceive(WorldSession* session, WorldPacket& packet)
+{
+    Player* player = NULL;
+    if (session)
+        player = session->GetPlayer();
+    bool Result = true;
+    for (std::vector<int>::const_iterator itr = sEluna->ServerEventBindings[SERVER_EVENT_ON_PACKET_RECEIVE].begin();
+        itr != sEluna->ServerEventBindings[SERVER_EVENT_ON_PACKET_RECEIVE].end(); ++itr)
+    {
+        sEluna->BeginCall((*itr));
+        sEluna->Push(sEluna->L, SERVER_EVENT_ON_PACKET_RECEIVE);
+        sEluna->Push(sEluna->L, &packet);
+        sEluna->Push(sEluna->L, player);
+        if (sEluna->ExecuteCall(3, 1))
+        {
+            lua_State* L = sEluna->L;
+            if (!lua_isnoneornil(L, 1))
+            {
+                WorldPacket* data = sEluna->CHECK_PACKET(L, 1);
+                if (data)
+                    packet = *data;
+                if (!lua_toboolean(L, 1))
+                    Result = false;
+            }
+            sEluna->EndCall(1);
+        }
+    }
+    for (std::vector<int>::const_iterator itr = sEluna->PacketEventBindings[packet.GetOpcode()].begin();
+        itr != sEluna->PacketEventBindings[packet.GetOpcode()].end(); ++itr)
+    {
+        sEluna->BeginCall((*itr));
+        sEluna->Push(sEluna->L, SERVER_EVENT_ON_PACKET_RECEIVE);
+        sEluna->Push(sEluna->L, &packet);
+        sEluna->Push(sEluna->L, player);
+        if (sEluna->ExecuteCall(3, 1))
+        {
+            lua_State* L = sEluna->L;
+            if (!lua_isnoneornil(L, 1))
+            {
+                WorldPacket* data = sEluna->CHECK_PACKET(L, 1);
+                if (data)
+                    packet = *data;
+                if (!lua_toboolean(L, 1))
+                    Result = false;
+            }
+            sEluna->EndCall(1);
+        }
+    }
+    return Result;
+}
+
+struct ElunaWorldAI : public WorldScript
 {
 public:
     ElunaWorldAI() : WorldScript("ElunaWorldAI") { }
@@ -1263,7 +1367,7 @@ public:
     }
 };
 
-struct HookMgr::ElunaCreatureAI : ScriptedAI
+struct ElunaCreatureAI : ScriptedAI
 {
     ElunaCreatureAI(Creature* creature) : ScriptedAI(creature) { }
     ~ElunaCreatureAI() { }
@@ -1676,7 +1780,7 @@ struct HookMgr::ElunaCreatureAI : ScriptedAI
     }
 };
 
-struct HookMgr::ElunaGameObjectAI : public GameObjectAI
+struct ElunaGameObjectAI : public GameObjectAI
 {
     ElunaGameObjectAI(GameObject* _go) : GameObjectAI(_go) { }
     ~ElunaGameObjectAI()
@@ -1978,5 +2082,5 @@ GameObjectAI* HookMgr::GetAI(GameObject* gameObject)
 
 void AddElunaScripts()
 {
-    new HookMgr::ElunaWorldAI();
+    new ElunaWorldAI();
 }

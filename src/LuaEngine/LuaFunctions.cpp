@@ -29,6 +29,7 @@
 void RegisterGlobals(lua_State* L)
 {
     // Hooks
+    lua_register(L, "RegisterPacketEvent", &LuaGlobalFunctions::RegisterPacketEvent);
     lua_register(L, "RegisterServerEvent", &LuaGlobalFunctions::RegisterServerEvent);                       // RegisterServerEvent(event, function)
     lua_register(L, "RegisterPlayerEvent", &LuaGlobalFunctions::RegisterPlayerEvent);                       // RegisterPlayerEvent(event, function)
     lua_register(L, "RegisterVehicleEvent", &LuaGlobalFunctions::RegisterVehicleEvent);                     // RegisterVehicleEvent(event, function)
@@ -222,6 +223,7 @@ ElunaRegister<Unit> UnitMethods[] =
     {"SetDisplayId", &LuaUnit::SetDisplayId},               // :SetDisplayId(id)
     {"SetNativeDisplayId", &LuaUnit::SetNativeDisplayId},   // :SetNativeDisplayId(id)
     {"SetFacing", &LuaUnit::SetFacing},                     // :SetFacing(o) - Sets the Unit facing to arg
+    {"SetFacingToObject", &LuaUnit::SetFacingToObject},     // :SetFacingToObject(worldObject) - Sets the Unit facing towards the WorldObject
     {"SetPhaseMask", &LuaUnit::SetPhaseMask},               // :SetPhaseMask(Phase[, update]) - Sets the phase of the unit
     {"SetSpeed", &LuaUnit::SetSpeed},                       // :SetSpeed(type, speed[, forced]) - Sets speed for the movement type (0 = walk, 1 = run ..)
     // {"SetStunned", &LuaUnit::SetStunned},                // :SetStunned([enable]) - Stuns or removes stun
@@ -242,6 +244,7 @@ ElunaRegister<Unit> UnitMethods[] =
     {"SetPetGUID", &LuaUnit::SetPetGUID},                   // :SetPetGUID(uint64 guid) - Sets the pet's guid
     {"SetCritterGUID", &LuaUnit::SetCritterGUID},           // :SetCritterGUID(uint64 guid) - Sets the critter's guid
     {"SetWaterWalk", &LuaUnit::SetWaterWalk},               // :SetWaterWalk([enable]) - Sets WaterWalk on or off
+    {"SetStandState", &LuaUnit::SetStandState},             // :SetStandState(state) - Sets the stand state (Stand, Kneel, sleep, etc) of the unit
 
     // Boolean
     {"IsAlive", &LuaUnit::IsAlive},                         // :IsAlive()
@@ -285,6 +288,7 @@ ElunaRegister<Unit> UnitMethods[] =
     // {"IsRooted", &LuaUnit::IsRooted},                    // :IsRooted()
     {"IsFullHealth", &LuaUnit::IsFullHealth},               // :IsFullHealth() - Returns if the unit is full health
     {"HasAura", &LuaUnit::HasAura},                         // :HasAura(spellId) - Returns true if the unit has the aura from the spell
+    {"IsStandState", &LuaUnit::IsStandState},               // :IsStandState() - Returns true if the unit is standing
 
     // Other
     {"RegisterEvent", &LuaUnit::RegisterEvent},             // :RegisterEvent(function, delay, calls)
@@ -1083,84 +1087,86 @@ ElunaRegister<AuctionHouseObject> AuctionMethods[] =
     {NULL, NULL}
 };
 
+template<typename T> const char* ElunaTemplate<T>::tname = NULL;
+template<typename T> bool ElunaTemplate<T>::manageMemory = false;
+// fix compile error about accessing vehicle destructor for TC
+template<> int ElunaTemplate<Vehicle>::gcT(lua_State* L) { return 0; }
+
 void RegisterFunctions(lua_State* L)
 {
     RegisterGlobals(L);
     lua_settop(L, 0); // clean stack
 
-    ElunaTemplate<Object>::Register(L);
-    SetMethods(L, ObjectMethods);
+    ElunaTemplate<Object>::Register(L, "Object");
+    ElunaTemplate<Object>::SetMethods(L, ObjectMethods);
 
-    ElunaTemplate<WorldObject>::Register(L);
-    SetMethods(L, ObjectMethods);
-    SetMethods(L, WorldObjectMethods);
+    ElunaTemplate<WorldObject>::Register(L, "WorldObject");
+    ElunaTemplate<WorldObject>::SetMethods(L, ObjectMethods);
+    ElunaTemplate<WorldObject>::SetMethods(L, WorldObjectMethods);
 
-    ElunaTemplate<Unit>::Register(L);
-    SetMethods(L, ObjectMethods);
-    SetMethods(L, WorldObjectMethods);
-    SetMethods(L, VehicleMethods);
-    SetMethods(L, UnitMethods);
+    ElunaTemplate<Unit>::Register(L, "Unit");
+    ElunaTemplate<Unit>::SetMethods(L, ObjectMethods);
+    ElunaTemplate<Unit>::SetMethods(L, WorldObjectMethods);
+    ElunaTemplate<Unit>::SetMethods(L, UnitMethods);
 
-    ElunaTemplate<Player>::Register(L);
-    SetMethods(L, ObjectMethods);
-    SetMethods(L, WorldObjectMethods);
-    SetMethods(L, UnitMethods);
-    SetMethods(L, PlayerMethods);
+    ElunaTemplate<Player>::Register(L, "Player");
+    ElunaTemplate<Player>::SetMethods(L, ObjectMethods);
+    ElunaTemplate<Player>::SetMethods(L, WorldObjectMethods);
+    ElunaTemplate<Player>::SetMethods(L, UnitMethods);
+    ElunaTemplate<Player>::SetMethods(L, PlayerMethods);
 
-    ElunaTemplate<Creature>::Register(L);
-    SetMethods(L, ObjectMethods);
-    SetMethods(L, WorldObjectMethods);
-    SetMethods(L, UnitMethods);
-    SetMethods(L, CreatureMethods);
+    ElunaTemplate<Creature>::Register(L, "Creature");
+    ElunaTemplate<Creature>::SetMethods(L, ObjectMethods);
+    ElunaTemplate<Creature>::SetMethods(L, WorldObjectMethods);
+    ElunaTemplate<Creature>::SetMethods(L, UnitMethods);
+    ElunaTemplate<Creature>::SetMethods(L, CreatureMethods);
 
-    ElunaTemplate<GameObject>::Register(L);
-    SetMethods(L, ObjectMethods);
-    SetMethods(L, WorldObjectMethods);
-    SetMethods(L, GameObjectMethods);
+    ElunaTemplate<GameObject>::Register(L, "GameObject");
+    ElunaTemplate<GameObject>::SetMethods(L, ObjectMethods);
+    ElunaTemplate<GameObject>::SetMethods(L, WorldObjectMethods);
+    ElunaTemplate<GameObject>::SetMethods(L, GameObjectMethods);
 
-    ElunaTemplate<Vehicle>::Register(L);
-    SetMethods(L, ObjectMethods);
-    SetMethods(L, WorldObjectMethods);
-    SetMethods(L, UnitMethods);
-    SetMethods(L, VehicleMethods);
+    ElunaTemplate<Corpse>::Register(L, "Corpse");
+    ElunaTemplate<Corpse>::SetMethods(L, ObjectMethods);
+    ElunaTemplate<Corpse>::SetMethods(L, WorldObjectMethods);
+    ElunaTemplate<Corpse>::SetMethods(L, CorpseMethods);
 
-    ElunaTemplate<Corpse>::Register(L);
-    SetMethods(L, ObjectMethods);
-    SetMethods(L, WorldObjectMethods);
-    SetMethods(L, CorpseMethods);
+    ElunaTemplate<Item>::Register(L, "Item");
+    ElunaTemplate<Item>::SetMethods(L, ObjectMethods);
+    ElunaTemplate<Item>::SetMethods(L, ItemMethods);
 
-    ElunaTemplate<Item>::Register(L);
-    SetMethods(L, ObjectMethods);
-    SetMethods(L, ItemMethods);
+    ElunaTemplate<Vehicle>::Register(L, "Vehicle");
+    ElunaTemplate<Vehicle>::SetMethods(L, VehicleMethods);
 
-    ElunaTemplate<Group>::Register(L);
-    SetMethods(L, GroupMethods);
+    ElunaTemplate<Group>::Register(L, "Group");
+    ElunaTemplate<Group>::SetMethods(L, GroupMethods);
 
-    ElunaTemplate<Guild>::Register(L);
-    SetMethods(L, GuildMethods);
+    ElunaTemplate<Guild>::Register(L, "Guild");
+    ElunaTemplate<Guild>::SetMethods(L, GuildMethods);
 
-    ElunaTemplate<QueryResult>::Register(L);
-    SetMethods(L, QueryMethods);
+    ElunaTemplate<Aura>::Register(L, "Aura");
+    ElunaTemplate<Aura>::SetMethods(L, AuraMethods);
 
-    ElunaTemplate<Aura>::Register(L);
-    SetMethods(L, AuraMethods);
+    ElunaTemplate<Spell>::Register(L, "Spell");
+    ElunaTemplate<Spell>::SetMethods(L, SpellMethods);
 
-    ElunaTemplate<WorldPacket>::Register(L);
-    SetMethods(L, PacketMethods);
+    ElunaTemplate<Quest>::Register(L, "Quest");
+    ElunaTemplate<Quest>::SetMethods(L, QuestMethods);
 
-    ElunaTemplate<Spell>::Register(L);
-    SetMethods(L, SpellMethods);
+    ElunaTemplate<Map>::Register(L, "Map");
+    ElunaTemplate<Map>::SetMethods(L, MapMethods);
 
-    ElunaTemplate<Quest>::Register(L);
-    SetMethods(L, QuestMethods);
+    ElunaTemplate<Weather>::Register(L, "Weather");
+    ElunaTemplate<Weather>::SetMethods(L, WeatherMethods);
 
-    ElunaTemplate<Map>::Register(L);
-    SetMethods(L, MapMethods);
+    ElunaTemplate<AuctionHouseObject>::Register(L, "AuctionHouseObject");
+    ElunaTemplate<AuctionHouseObject>::SetMethods(L, AuctionMethods);
 
-    ElunaTemplate<Weather>::Register(L);
-    SetMethods(L, WeatherMethods);
+    ElunaTemplate<WorldPacket>::Register(L, "WorldPacket", true);
+    ElunaTemplate<WorldPacket>::SetMethods(L, PacketMethods);
 
-    ElunaTemplate<AuctionHouseObject>::Register(L);
+    ElunaTemplate<QueryResult>::Register(L, "QueryResult", true);
+    ElunaTemplate<QueryResult>::SetMethods(L, QueryMethods);
 
     lua_settop(L, 0); // clean stack
 }
