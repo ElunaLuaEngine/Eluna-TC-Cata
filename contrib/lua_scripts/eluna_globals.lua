@@ -46,12 +46,12 @@ SEC_CONSOLE        = 4 -- must be always last in list, accounts must have less s
 --------------------------------------------------------
 -- OBJECT FIELD TYPES
 
-OBJECT_FIELD_GUID                         = 0x0000, -- Size: 2, Type: LONG, Flags: PUBLIC
-OBJECT_FIELD_DATA                         = 0x0002, -- Size: 2, Type: LONG, Flags: PUBLIC
-OBJECT_FIELD_TYPE                         = 0x0004, -- Size: 1, Type: TWO_SHORT, Flags: PUBLIC
-OBJECT_FIELD_ENTRY                        = 0x0005, -- Size: 1, Type: INT, Flags: PUBLIC
-OBJECT_FIELD_SCALE_X                      = 0x0006, -- Size: 1, Type: FLOAT, Flags: PUBLIC
-OBJECT_FIELD_PADDING                      = 0x0007, -- Size: 1, Type: INT, Flags: NONE
+OBJECT_FIELD_GUID                         = 0x0000 -- Size: 2, Type: LONG, Flags: PUBLIC
+OBJECT_FIELD_DATA                         = 0x0002 -- Size: 2, Type: LONG, Flags: PUBLIC
+OBJECT_FIELD_TYPE                         = 0x0004 -- Size: 1, Type: TWO_SHORT, Flags: PUBLIC
+OBJECT_FIELD_ENTRY                        = 0x0005 -- Size: 1, Type: INT, Flags: PUBLIC
+OBJECT_FIELD_SCALE_X                      = 0x0006 -- Size: 1, Type: FLOAT, Flags: PUBLIC
+OBJECT_FIELD_PADDING                      = 0x0007 -- Size: 1, Type: INT, Flags: NONE
 local OBJECT_END                          = 0x0008
 local ITEM_END                            = OBJECT_END + 0x0042
 local UNIT_END                            = OBJECT_END + 0x008A
