@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2010 - 2013 Eluna Lua Engine <http://emudevs.com/>
+* Copyright (C) 2010 - 2014 Eluna Lua Engine <http://emudevs.com/>
 * This program is free software licensed under GPL version 3
 * Please see the included DOCS/LICENSE.TXT for more information
 */
@@ -21,11 +21,11 @@ namespace LuaQuest
         return 1;
     }
 
-    int GetMaxLevel(lua_State* L, Quest* quest)
+    /*int GetMaxLevel(lua_State* L, Quest* quest)
     {
-        sEluna->Push(L, quest->GetMaxLevel());
-        return 1;
-    }
+    sEluna->Push(L, quest->GetMaxLevel());
+    return 1;
+    }*/
 
     int GetMinLevel(lua_State* L, Quest* quest)
     {
@@ -53,7 +53,11 @@ namespace LuaQuest
 
     int GetFlags(lua_State* L, Quest* quest)
     {
+#ifdef MANGOS
+        sEluna->Push(L, quest->GetQuestFlags());
+#else
         sEluna->Push(L, quest->GetFlags());
+#endif
         return 1;
     }
 
@@ -65,8 +69,12 @@ namespace LuaQuest
 
     int HasFlag(lua_State* L, Quest* quest)
     {
-        uint32 flag = luaL_checkunsigned(L, 1);
+        uint32 flag = sEluna->CHECKVAL<uint32>(L, 2);
+#ifdef MANGOS
+        sEluna->Push(L, quest->HasQuestFlag((QuestFlags)flag));
+#else
         sEluna->Push(L, quest->HasFlag(flag));
+#endif
         return 1;
     }
 
@@ -84,7 +92,7 @@ namespace LuaQuest
 
     int SetFlag(lua_State* L, Quest* quest)
     {
-        uint32 flag = luaL_checkunsigned(L, 1);
+        uint32 flag = sEluna->CHECKVAL<uint32>(L, 2);
         quest->SetSpecialFlag((QuestSpecialFlags)flag);
         return 0;
     }

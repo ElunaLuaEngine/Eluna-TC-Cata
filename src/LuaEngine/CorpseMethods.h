@@ -1,5 +1,5 @@
 /*
-* Copyright (C) 2010 - 2013 Eluna Lua Engine <http://emudevs.com/>
+* Copyright (C) 2010 - 2014 Eluna Lua Engine <http://emudevs.com/>
 * This program is free software licensed under GPL version 3
 * Please see the included DOCS/LICENSE.TXT for more information
 */
@@ -12,18 +12,18 @@ namespace LuaCorpse
     // GetOwnerGUID()
     int GetOwnerGUID(lua_State* L, Corpse* corpse)
     {
+#ifdef MANGOS
+        sEluna->Push(L, corpse->GetOwnerGuid());
+#else
         sEluna->Push(L, corpse->GetOwnerGUID());
+#endif
         return 1;
     }
 
     // GetGhostTime()
     int GetGhostTime(lua_State* L, Corpse* corpse)
     {
-        time_t time = corpse->GetGhostTime();
-        if (time < 0)
-            sEluna->Push(L, int32(time));
-        else
-            sEluna->Push(L, uint32(time));
+        sEluna->Push(L, uint32(corpse->GetGhostTime()));
         return 1;
     }
 

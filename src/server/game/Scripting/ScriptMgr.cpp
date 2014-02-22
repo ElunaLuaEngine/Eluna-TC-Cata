@@ -181,7 +181,7 @@ ScriptMgr::ScriptMgr()
 
 ScriptMgr::~ScriptMgr() { }
 
-extern void StartEluna(bool restart);
+extern bool StartEluna();
 void ScriptMgr::Initialize()
 {
     uint32 oldMSTime = getMSTime();
@@ -194,7 +194,7 @@ void ScriptMgr::Initialize()
     AddScripts();
     /* Eluna [Lua Engine] */
 #ifdef ELUNA
-    StartEluna(false);
+    StartEluna();
 #endif
 
     TC_LOG_INFO("server.loading", ">> Loaded %u C++ scripts in %u ms", GetScriptCount(), GetMSTimeDiffToNow(oldMSTime));
@@ -1145,10 +1145,6 @@ void ScriptMgr::OnAuctionExpire(AuctionHouseObject* ah, AuctionEntry* entry)
 bool ScriptMgr::OnConditionCheck(Condition* condition, ConditionSourceInfo& sourceInfo)
 {
     ASSERT(condition);
-#ifdef ELUNA
-    if(sHookMgr->OnConditionCheck(condition, sourceInfo))
-        return true;
-#endif
 
     GET_SCRIPT_RET(ConditionScript, condition->ScriptId, tmpscript, true);
     return tmpscript->OnConditionCheck(condition, sourceInfo);
@@ -1523,7 +1519,7 @@ void ScriptMgr::OnGuildAddMember(Guild* guild, Player* player, uint8& plRank)
 void ScriptMgr::OnGuildRemoveMember(Guild* guild, Player* player, bool isDisbanding, bool isKicked)
 {
 #ifdef ELUNA
-    sHookMgr->OnRemoveMember(guild, player, isDisbanding, isKicked);
+    sHookMgr->OnRemoveMember(guild, player, isDisbanding);
 #endif
     FOREACH_SCRIPT(GuildScript)->OnRemoveMember(guild, player, isDisbanding, isKicked);
 }
@@ -1624,7 +1620,7 @@ void ScriptMgr::OnGroupRemoveMember(Group* group, uint64 guid, RemoveMethod meth
 {
     ASSERT(group);
 #ifdef ELUNA
-    sHookMgr->OnRemoveMember(group, guid, method, kicker, reason);
+    sHookMgr->OnRemoveMember(group, guid, method);
 #endif
     FOREACH_SCRIPT(GroupScript)->OnRemoveMember(group, guid, method, kicker, reason);
 }
