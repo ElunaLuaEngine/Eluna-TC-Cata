@@ -1,3 +1,9 @@
+#
+# Copyright (C) 2010 - 2014 Eluna Lua Engine <http://emudevs.com/>
+# This program is free software licensed under GPL version 3
+# Please see the included DOCS/LICENSE.TXT for more information
+#
+
 language:
     cpp
 
@@ -12,9 +18,9 @@ git:
 before_install:
 # Install ACE
 # Get ACE
-    - wget http://download.dre.vanderbilt.edu/previous_versions/ACE-6.0.3.tar.gz
+    - wget http://download.dre.vanderbilt.edu/previous_versions/ACE-6.0.3.tar.gz > /dev/null
 # Unzip ACE to TrinityCore/
-    - tar xzf ACE-6.0.3.tar.gz
+    - tar xzf ACE-6.0.3.tar.gz > /dev/null
 # Go to TrinityCore/ACE_wrappers
     - cd ACE_wrappers/
 # Create TrinityCore/ACE_wrappers/build
@@ -22,9 +28,19 @@ before_install:
 # Go to TrinityCore/ACE_wrappers/build
     - cd build
 # Install ACE system wide:
-    - ../configure --disable-ssl
-    - make -s --jobs=4
-    - sudo make -s --jobs=4 install
+    - ../configure --disable-ssl > /dev/null
+    - make -i --jobs=4 > /dev/null
+    - sudo make -i --jobs=4 install > /dev/null
+# Go to TrinityCore/
+    - cd ../../
+
+# Get Eluna
+# Go to /src/LuaEngine/
+    - ls
+    - cd src/LuaEngine/
+# init git and get latest eluna
+    - git init
+    - git pull https://github.com/Rochet2/Eluna.git
 # Go to TrinityCore/
     - cd ../../
 
