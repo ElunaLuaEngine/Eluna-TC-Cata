@@ -41,8 +41,6 @@ EndScriptData */
 #include "WardenCheckMgr.h"
 #include "WaypointManager.h"
 
-extern void StartEluna(bool restart);
-
 class reload_commandscript : public CommandScript
 {
 public:
