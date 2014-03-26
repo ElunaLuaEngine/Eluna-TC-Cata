@@ -415,9 +415,6 @@ void WorldSession::HandleSpiritHealerActivateOpcode(WorldPacket& recvData)
         TC_LOG_DEBUG("network", "WORLD: HandleSpiritHealerActivateOpcode - Unit (GUID: %u) not found or you can not interact with him.", uint32(GUID_LOPART(guid)));
         return;
     }
-#ifdef ELUNA
-    sHookMgr->OnResurrect(GetPlayer());
-#endif
 
     // remove fake death
     if (GetPlayer()->HasUnitState(UNIT_STATE_DIED))

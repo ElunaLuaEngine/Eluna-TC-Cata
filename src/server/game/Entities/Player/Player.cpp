@@ -80,6 +80,7 @@
 #include "WorldSession.h"
 #include "MovementStructures.h"
 #include "GameObjectAI.h"
+#include "HookMgr.h"
 
 #define ZONE_UPDATE_INTERVAL (1*IN_MILLISECONDS)
 
@@ -5206,6 +5207,10 @@ void Player::ResurrectPlayer(float restore_percent, bool applySickness)
 
     // update visibility
     UpdateObjectVisibility();
+
+#ifdef ELUNA
+    sHookMgr->OnResurrect(this);
+#endif
 
     if (!applySickness)
         return;
@@ -20688,6 +20693,10 @@ void Player::Say(const std::string& text, const uint32 language)
 {
     std::string _text(text);
     sScriptMgr->OnPlayerChat(this, CHAT_MSG_SAY, language, _text);
+#ifdef ELUNA
+    if (!sHookMgr->OnChat(this, CHAT_MSG_SAY, language, _text))
+        return;
+#endif
 
     WorldPacket data;
     ChatHandler::BuildChatPacket(data, CHAT_MSG_SAY, Language(language), this, this, text);
@@ -20698,6 +20707,10 @@ void Player::Yell(const std::string& text, const uint32 language)
 {
     std::string _text(text);
     sScriptMgr->OnPlayerChat(this, CHAT_MSG_YELL, language, _text);
+#ifdef ELUNA
+    if (!sHookMgr->OnChat(this, CHAT_MSG_YELL, language, _text))
+        return;
+#endif
 
     WorldPacket data;
     ChatHandler::BuildChatPacket(data, CHAT_MSG_YELL, Language(language), this, this, text);
@@ -20708,6 +20721,10 @@ void Player::TextEmote(const std::string& text)
 {
     std::string _text(text);
     sScriptMgr->OnPlayerChat(this, CHAT_MSG_EMOTE, LANG_UNIVERSAL, _text);
+#ifdef ELUNA
+    if (!sHookMgr->OnChat(this, CHAT_MSG_EMOTE, LANG_UNIVERSAL, _text))
+        return;
+#endif
 
     WorldPacket data;
     ChatHandler::BuildChatPacket(data, CHAT_MSG_EMOTE, LANG_UNIVERSAL, this, this, text);
@@ -20718,6 +20735,10 @@ void Player::WhisperAddon(const std::string& text, const std::string& prefix, Pl
 {
     std::string _text(text);
     sScriptMgr->OnPlayerChat(this, CHAT_MSG_WHISPER, LANG_ADDON, _text, receiver);
+#ifdef ELUNA
+    if (!sHookMgr->OnChat(this, CHAT_MSG_WHISPER, LANG_ADDON, _text, receiver))
+        return;
+#endif
 
     if (!receiver->GetSession()->IsAddonRegistered(prefix))
         return;
@@ -20738,6 +20759,10 @@ void Player::Whisper(const std::string& text, uint32 language, uint64 receiver)
 
     std::string _text(text);
     sScriptMgr->OnPlayerChat(this, CHAT_MSG_WHISPER, language, _text, rPlayer);
+#ifdef ELUNA
+    if (!sHookMgr->OnChat(this, CHAT_MSG_WHISPER, language, _text, rPlayer))
+        return;
+#endif
 
     WorldPacket data;
     ChatHandler::BuildChatPacket(data, CHAT_MSG_WHISPER, Language(language), this, this, text);
