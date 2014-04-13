@@ -836,6 +836,8 @@ class GameObject : public WorldObject, public GridObject<GameObject>, public Map
         // Event handler
         EventProcessor m_Events;
 
+        void UpdateModelPosition();
+
     protected:
         bool AIM_Initialize();
         void UpdateModel();                                 // updates model in case displayId were changed
@@ -848,7 +850,7 @@ class GameObject : public WorldObject, public GridObject<GameObject>, public Map
                                                             // For traps this: spell casting cooldown, for doors/buttons: reset time.
         std::list<uint32> m_SkillupList;
 
-        Player* m_ritualOwner;                              // used for GAMEOBJECT_TYPE_SUMMONING_RITUAL where GO is not summoned (no owner)
+        uint64 m_ritualOwnerGUID;                           // used for GAMEOBJECT_TYPE_SUMMONING_RITUAL where GO is not summoned (no owner)
         std::set<uint64> m_unique_users;
         uint32 m_usetimes;
 
