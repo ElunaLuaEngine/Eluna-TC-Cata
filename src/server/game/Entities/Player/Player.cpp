@@ -20839,10 +20839,6 @@ void Player::Say(const std::string& text, const uint32 language)
 {
     std::string _text(text);
     sScriptMgr->OnPlayerChat(this, CHAT_MSG_SAY, language, _text);
-#ifdef ELUNA
-    if (!sHookMgr->OnChat(this, CHAT_MSG_SAY, language, _text))
-        return;
-#endif
 
     WorldPacket data;
     ChatHandler::BuildChatPacket(data, CHAT_MSG_SAY, Language(language), this, this, _text);
@@ -20853,10 +20849,6 @@ void Player::Yell(const std::string& text, const uint32 language)
 {
     std::string _text(text);
     sScriptMgr->OnPlayerChat(this, CHAT_MSG_YELL, language, _text);
-#ifdef ELUNA
-    if (!sHookMgr->OnChat(this, CHAT_MSG_YELL, language, _text))
-        return;
-#endif
 
     WorldPacket data;
     ChatHandler::BuildChatPacket(data, CHAT_MSG_YELL, Language(language), this, this, _text);
@@ -20867,10 +20859,6 @@ void Player::TextEmote(const std::string& text)
 {
     std::string _text(text);
     sScriptMgr->OnPlayerChat(this, CHAT_MSG_EMOTE, LANG_UNIVERSAL, _text);
-#ifdef ELUNA
-    if (!sHookMgr->OnChat(this, CHAT_MSG_EMOTE, LANG_UNIVERSAL, _text))
-        return;
-#endif
 
     WorldPacket data;
     ChatHandler::BuildChatPacket(data, CHAT_MSG_EMOTE, LANG_UNIVERSAL, this, this, _text);
@@ -20905,10 +20893,6 @@ void Player::Whisper(const std::string& text, uint32 language, uint64 receiver)
 
     std::string _text(text);
     sScriptMgr->OnPlayerChat(this, CHAT_MSG_WHISPER, language, _text, rPlayer);
-#ifdef ELUNA
-    if (!sHookMgr->OnChat(this, CHAT_MSG_WHISPER, language, _text, rPlayer))
-        return;
-#endif
 
     WorldPacket data;
     ChatHandler::BuildChatPacket(data, CHAT_MSG_WHISPER, Language(language), this, this, _text);

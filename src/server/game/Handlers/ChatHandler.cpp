@@ -312,11 +312,29 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recvData)
             }
 
             if (type == CHAT_MSG_SAY)
+            {
+#ifdef ELUNA
+                if (!sHookMgr->OnChat(sender, type, lang, msg))
+                    return;
+#endif
                 sender->Say(msg, lang);
+            }
             else if (type == CHAT_MSG_EMOTE)
+            {
+#ifdef ELUNA
+                if (!sHookMgr->OnChat(sender, type, LANG_UNIVERSAL, msg))
+                    return;
+#endif
                 sender->TextEmote(msg);
+            }
             else if (type == CHAT_MSG_YELL)
+            {
+#ifdef ELUNA
+                if (!sHookMgr->OnChat(sender, type, lang, msg))
+                    return;
+#endif
                 sender->Yell(msg, lang);
+            }
             break;
         }
         case CHAT_MSG_WHISPER:
@@ -357,6 +375,10 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recvData)
                 (HasPermission(rbac::RBAC_PERM_CAN_FILTER_WHISPERS) && !sender->isAcceptWhispers() && !sender->IsInWhisperWhiteList(receiver->GetGUID())))
                 sender->AddWhisperWhiteList(receiver->GetGUID());
 
+#ifdef ELUNA
+            if (!sHookMgr->OnChat(GetPlayer(), type, lang, msg, receiver))
+                return;
+#endif
             GetPlayer()->Whisper(msg, lang, receiver->GetGUID());
             break;
         }
