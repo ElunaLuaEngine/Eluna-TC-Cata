@@ -80,7 +80,7 @@
 #include "WorldSession.h"
 #include "MovementStructures.h"
 #include "GameObjectAI.h"
-#include "HookMgr.h"
+#include "LuaEngine.h"
 
 #define ZONE_UPDATE_INTERVAL (1*IN_MILLISECONDS)
 
@@ -902,6 +902,10 @@ Player::~Player()
 {
     // it must be unloaded already in PlayerLogout and accessed only for loggined player
     //m_social = NULL;
+
+#ifdef ELUNA
+    Eluna::RemoveRef(this);
+#endif
 
     // Note: buy back item already deleted from DB when player was saved
     for (uint8 i = 0; i < PLAYER_SLOTS_COUNT; ++i)
@@ -5209,7 +5213,7 @@ void Player::ResurrectPlayer(float restore_percent, bool applySickness)
     UpdateObjectVisibility();
 
 #ifdef ELUNA
-    sHookMgr->OnResurrect(this);
+    sEluna->OnResurrect(this);
 #endif
 
     if (!applySickness)
@@ -12250,6 +12254,9 @@ Item* Player::EquipItem(uint16 pos, Item* pItem, bool update)
 
         ApplyEquipCooldown(pItem2);
 
+#ifdef ELUNA
+        sEluna->OnEquip(this, pItem2, bag, slot);
+#endif
         return pItem2;
     }
 
@@ -12257,6 +12264,9 @@ Item* Player::EquipItem(uint16 pos, Item* pItem, bool update)
     UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_EQUIP_ITEM, pItem->GetEntry());
     UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_EQUIP_EPIC_ITEM, pItem->GetEntry(), slot);
 
+#ifdef ELUNA
+        sEluna->OnEquip(this, pItem, bag, slot);
+#endif
     return pItem;
 }
 
@@ -12278,6 +12288,10 @@ void Player::QuickEquipItem(uint16 pos, Item* pItem)
 
         UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_EQUIP_ITEM, pItem->GetEntry());
         UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_EQUIP_EPIC_ITEM, pItem->GetEntry(), slot);
+
+#ifdef ELUNA
+        sEluna->OnEquip(this, pItem, (pos >> 8), slot);
+#endif
     }
 }
 
@@ -20870,7 +20884,7 @@ void Player::WhisperAddon(const std::string& text, const std::string& prefix, Pl
     std::string _text(text);
     sScriptMgr->OnPlayerChat(this, CHAT_MSG_WHISPER, LANG_ADDON, _text, receiver);
 #ifdef ELUNA
-    if (!sHookMgr->OnChat(this, CHAT_MSG_WHISPER, LANG_ADDON, _text, receiver))
+    if (!sEluna->OnChat(this, CHAT_MSG_WHISPER, LANG_ADDON, _text, receiver))
         return;
 #endif
 
@@ -25457,6 +25471,9 @@ void Player::StoreLootItem(uint8 lootSlot, Loot* loot)
         if (loot->containerID > 0)
             loot->DeleteLootItemFromContainerItemDB(item->itemid);
 
+#ifdef ELUNA
+        sEluna->OnLootItem(this, newitem, item->count, this->GetLootGUID());
+#endif
     }
     else
         SendEquipError(msg, NULL, NULL, item->itemid);

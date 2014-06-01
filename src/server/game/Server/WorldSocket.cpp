@@ -45,7 +45,7 @@
 #include "PacketLog.h"
 #include "ScriptMgr.h"
 #include "AccountMgr.h"
-#include "HookMgr.h"
+#include "LuaEngine.h"
 
 #if defined(__GNUC__)
 #pragma pack(1)
@@ -180,7 +180,7 @@ int WorldSocket::SendPacket(WorldPacket const& pct)
 
     sScriptMgr->OnPacketSend(this, *pkt);
 #ifdef ELUNA
-    if (!sHookMgr->OnPacketSend(m_Session, data))
+    if (!sEluna->OnPacketSend(m_Session, data))
         return 0;
 #endif
 
@@ -709,7 +709,7 @@ int WorldSocket::ProcessIncoming(WorldPacket* new_pct)
 
                 sScriptMgr->OnPacketReceive(this, WorldPacket(*new_pct));
 #ifdef ELUNA
-                if (!sHookMgr->OnPacketReceive(m_Session, *new_pct))
+                if (!sEluna->OnPacketReceive(m_Session, *new_pct))
                     return 0;
 #endif
                 return HandleAuthSession(*new_pct);
@@ -717,7 +717,7 @@ int WorldSocket::ProcessIncoming(WorldPacket* new_pct)
                 TC_LOG_DEBUG("network", "%s", opcodeName.c_str());
                 sScriptMgr->OnPacketReceive(this, WorldPacket(*new_pct));
 #ifdef ELUNA
-                sHookMgr->OnPacketReceive(m_Session, *new_pct);
+                sEluna->OnPacketReceive(m_Session, *new_pct);
 #endif
                 return 0;
             case CMSG_LOG_DISCONNECT:
@@ -725,7 +725,7 @@ int WorldSocket::ProcessIncoming(WorldPacket* new_pct)
                 TC_LOG_DEBUG("network", "%s", opcodeName.c_str());
                 sScriptMgr->OnPacketReceive(this, WorldPacket(*new_pct));
 #ifdef ELUNA
-                sHookMgr->OnPacketReceive(m_Session, *new_pct);
+                sEluna->OnPacketReceive(m_Session, *new_pct);
 #endif
                 return 0;
             // not an opcode, client sends string "WORLD OF WARCRAFT CONNECTION - CLIENT TO SERVER" without opcode
@@ -735,7 +735,7 @@ int WorldSocket::ProcessIncoming(WorldPacket* new_pct)
                 TC_LOG_DEBUG("network", "%s", opcodeName.c_str());
                 sScriptMgr->OnPacketReceive(this, WorldPacket(*new_pct));
 #ifdef ELUNA
-                sHookMgr->OnPacketReceive(m_Session, *new_pct);
+                sEluna->OnPacketReceive(m_Session, *new_pct);
 #endif
                 std::string str;
                 *new_pct >> str;
@@ -748,7 +748,7 @@ int WorldSocket::ProcessIncoming(WorldPacket* new_pct)
                 TC_LOG_DEBUG("network", "%s", opcodeName.c_str());
                 sScriptMgr->OnPacketReceive(this, WorldPacket(*new_pct));
 #ifdef ELUNA
-                sHookMgr->OnPacketReceive(m_Session, *new_pct);
+                sEluna->OnPacketReceive(m_Session, *new_pct);
 #endif
                 return m_Session ? m_Session->HandleEnableNagleAlgorithm() : -1;
             }

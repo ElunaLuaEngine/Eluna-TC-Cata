@@ -47,7 +47,7 @@
 #include "Transport.h"
 #include "WardenWin.h"
 #include "WardenMac.h"
-#include "HookMgr.h"
+#include "LuaEngine.h"
 
 namespace {
 
@@ -354,7 +354,7 @@ bool WorldSession::Update(uint32 diff, PacketFilter& updater)
                     {
                         sScriptMgr->OnPacketReceive(m_Socket, WorldPacket(*packet));
 #ifdef ELUNA
-                            if (!sHookMgr->OnPacketReceive(this, *packet))
+                            if (!sEluna->OnPacketReceive(this, *packet))
                                 break;
 #endif
                         (this->*opHandle->Handler)(*packet);
@@ -371,7 +371,7 @@ bool WorldSession::Update(uint32 diff, PacketFilter& updater)
                         // not expected _player or must checked in packet hanlder
                         sScriptMgr->OnPacketReceive(m_Socket, WorldPacket(*packet));
 #ifdef ELUNA
-                            if (!sHookMgr->OnPacketReceive(this, *packet))
+                            if (!sEluna->OnPacketReceive(this, *packet))
                                 break;
 #endif
                         (this->*opHandle->Handler)(*packet);
@@ -387,7 +387,7 @@ bool WorldSession::Update(uint32 diff, PacketFilter& updater)
                     {
                         sScriptMgr->OnPacketReceive(m_Socket, WorldPacket(*packet));
 #ifdef ELUNA
-                            if (!sHookMgr->OnPacketReceive(this, *packet))
+                            if (!sEluna->OnPacketReceive(this, *packet))
                                 break;
 #endif
                         (this->*opHandle->Handler)(*packet);
@@ -409,7 +409,7 @@ bool WorldSession::Update(uint32 diff, PacketFilter& updater)
 
                     sScriptMgr->OnPacketReceive(m_Socket, WorldPacket(*packet));
 #ifdef ELUNA
-                        if (!sHookMgr->OnPacketReceive(this, *packet))
+                        if (!sEluna->OnPacketReceive(this, *packet))
                             break;
 #endif
                     (this->*opHandle->Handler)(*packet);
