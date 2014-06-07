@@ -32,6 +32,7 @@
 #include "Opcodes.h"
 #include "WorldSession.h"
 
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -801,9 +802,10 @@ class InstanceSave;
 
 enum RestType
 {
-    REST_TYPE_NO        = 0,
-    REST_TYPE_IN_TAVERN = 1,
-    REST_TYPE_IN_CITY   = 2
+    REST_TYPE_NO                = 0,
+    REST_TYPE_IN_TAVERN         = 1,
+    REST_TYPE_IN_CITY           = 2,
+    REST_TYPE_IN_FACTION_AREA   = 3     // used with AREA_FLAG_REST_ZONE_*
 };
 
 enum TeleportToOptions
@@ -902,7 +904,8 @@ enum PlayerDelayedOperations
 
 // Player summoning auto-decline time (in secs)
 #define MAX_PLAYER_SUMMON_DELAY                   (2*MINUTE)
-#define MAX_MONEY_AMOUNT               (UI64LIT(9999999999)) // TODO: Move this restriction to worldserver.conf, default to this value, hardcap at uint64.max
+// Maximum money amount : 2^31 - 1
+extern uint64 const MAX_MONEY_AMOUNT;
 
 struct InstancePlayerBind
 {
@@ -1867,16 +1870,16 @@ class Player : public Unit, public GridObject<Player>
             _resurrectionData = NULL;
         }
 
-        bool IsRessurectRequestedBy(uint64 guid) const
+        bool IsResurrectRequestedBy(uint64 guid) const
         {
-            if (!IsRessurectRequested())
+            if (!IsResurrectRequested())
                 return false;
 
             return _resurrectionData->GUID == guid;
         }
 
-        bool IsRessurectRequested() const { return _resurrectionData != NULL; }
-        void ResurectUsingRequestData();
+        bool IsResurrectRequested() const { return _resurrectionData != NULL; }
+        void ResurrectUsingRequestData();
 
         uint8 getCinematic() { return m_cinematic; }
         void setCinematic(uint8 cine) { m_cinematic = cine; }
@@ -1894,7 +1897,8 @@ class Player : public Unit, public GridObject<Player>
         void UpdatePvP(bool state, bool override=false);
         void UpdateZone(uint32 newZone, uint32 newArea);
         void UpdateArea(uint32 newArea);
-
+        void SetNeedsZoneUpdate(bool needsUpdate) { m_needsZoneUpdate = needsUpdate; }
+        
         void UpdateZoneDependentAuras(uint32 zone_id);    // zones
         void UpdateAreaDependentAuras(uint32 area_id);    // subzones
 
@@ -2811,6 +2815,8 @@ class Player : public Unit, public GridObject<Player>
         bool IsAlwaysDetectableFor(WorldObject const* seer) const;
 
         uint8 m_grantableLevels;
+        
+        bool m_needsZoneUpdate;
 
         CUFProfile* _CUFProfiles[MAX_CUF_PROFILES];
 

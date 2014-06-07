@@ -570,10 +570,11 @@ m_caster((info->AttributesEx6 & SPELL_ATTR6_CAST_BY_CHARMER && caster->GetCharme
     m_spellState = SPELL_STATE_NULL;
     _triggeredCastFlags = triggerFlags;
     if (info->AttributesEx4 & SPELL_ATTR4_TRIGGERED)
-        _triggeredCastFlags = TRIGGERED_FULL_MASK;
+        _triggeredCastFlags = TriggerCastFlags(TRIGGERED_FULL_MASK & ~TRIGGERED_IGNORE_EQUIPPED_ITEM_REQUIREMENT);
 
     m_CastItem = NULL;
     m_castItemGUID = 0;
+    m_castItemEntry = 0;
 
     unitTarget = NULL;
     itemTarget = NULL;
@@ -1248,8 +1249,12 @@ void Spell::SelectImplicitCasterDestTargets(SpellEffIndex effIndex, SpellImplici
             float angle = float(rand_norm()) * static_cast<float>(M_PI * 35.0f / 180.0f) - static_cast<float>(M_PI * 17.5f / 180.0f);
             m_caster->GetClosePoint(x, y, z, DEFAULT_WORLD_OBJECT_SIZE, dist, angle);
 
-            float ground = z;
-            float liquidLevel = m_caster->GetMap()->GetWaterOrGroundLevel(x, y, z, &ground);
+            float ground = m_caster->GetMap()->GetHeight(m_caster->GetPhaseMask(), x, y, z, true, 50.0f);
+            float liquidLevel = VMAP_INVALID_HEIGHT_VALUE;
+            LiquidData liquidData;
+            if (m_caster->GetMap()->getLiquidStatus(x, y, z, MAP_ALL_LIQUIDS, &liquidData))
+                liquidLevel = liquidData.level;
+
             if (liquidLevel <= ground) // When there is no liquid Map::GetWaterOrGroundLevel returns ground level
             {
                 SendCastResult(SPELL_FAILED_NOT_HERE);
@@ -1285,10 +1290,7 @@ void Spell::SelectImplicitCasterDestTargets(SpellEffIndex effIndex, SpellImplici
                 dist = objSize + (dist - objSize) * float(rand_norm());
 
             Position pos = dest._position;
-            if (targetType.GetTarget() == TARGET_DEST_CASTER_FRONT_LEAP)
-                m_caster->MovePositionToFirstCollision(pos, dist, angle);
-            else
-                m_caster->MovePosition(pos, dist, angle);
+            m_caster->MovePositionToFirstCollision(pos, dist, angle);
 
             dest.Relocate(pos);
             break;
@@ -1321,7 +1323,7 @@ void Spell::SelectImplicitTargetDestTargets(SpellEffIndex effIndex, SpellImplici
                 dist = objSize + (dist - objSize) * float(rand_norm());
 
             Position pos = dest._position;
-            target->MovePosition(pos, dist, angle);
+            target->MovePositionToFirstCollision(pos, dist, angle);
 
             dest.Relocate(pos);
             break;
@@ -1360,7 +1362,7 @@ void Spell::SelectImplicitDestDestTargets(SpellEffIndex effIndex, SpellImplicitT
                 dist *= float(rand_norm());
 
             Position pos = dest._position;
-            m_caster->MovePosition(pos, dist, angle);
+            m_caster->MovePositionToFirstCollision(pos, dist, angle);
 
             dest.Relocate(pos);
             break;
@@ -2813,9 +2815,15 @@ bool Spell::UpdateChanneledTargetList()
 void Spell::prepare(SpellCastTargets const* targets, AuraEffect const* triggeredByAura)
 {
     if (m_CastItem)
+    {
         m_castItemGUID = m_CastItem->GetGUID();
+        m_castItemEntry = m_CastItem->GetEntry();
+    }
     else
+    {
         m_castItemGUID = 0;
+        m_castItemEntry = 0;
+    }
 
     InitExplicitTargets(*targets);
 
@@ -4220,7 +4228,7 @@ void Spell::SendChannelStart(uint32 duration)
 
 void Spell::SendResurrectRequest(Player* target)
 {
-    // get ressurector name for creature resurrections, otherwise packet will be not accepted
+    // get resurrector name for creature resurrections, otherwise packet will be not accepted
     // for player resurrections the name is looked up by guid
     std::string const sentName(m_caster->GetTypeId() == TYPEID_PLAYER
                                ? ""
@@ -4304,6 +4312,7 @@ void Spell::TakeCastItem()
 
         m_CastItem = NULL;
         m_castItemGUID = 0;
+        m_castItemEntry = 0;
     }
 }
 
@@ -4543,6 +4552,7 @@ void Spell::TakeReagents()
 
             m_CastItem = NULL;
             m_castItemGUID = 0;
+            m_castItemEntry = 0;
         }
 
         // if GetItemTarget is also spell reagent
@@ -6376,43 +6386,8 @@ bool Spell::UpdatePointers()
         if (!m_CastItem)
             return false;
 
-        // check if the retrieved item can even cast the spell
-        ItemTemplate const* proto = m_CastItem->GetTemplate();
-        bool spellFound = false;
-        for (int i = 0; i < MAX_ITEM_PROTO_SPELLS; ++i)
-        {
-            if (uint32(proto->Spells[i].SpellId) == GetSpellInfo()->Id)
-            {
-                spellFound = true;
-                break;
-            }
-        }
-
-        // check enchantment if the spell wasn't found in item proto
-        if (!spellFound)
-        {
-            for (uint8 e_slot = 0; e_slot < MAX_ENCHANTMENT_SLOT; ++e_slot)
-            {
-                uint32 enchant_id = m_CastItem->GetEnchantmentId(EnchantmentSlot(e_slot));
-                SpellItemEnchantmentEntry const* pEnchant = sSpellItemEnchantmentStore.LookupEntry(enchant_id);
-                if (!pEnchant)
-                    continue;
-
-                for (uint8 s = 0; s < MAX_ITEM_ENCHANTMENT_EFFECTS; ++s)
-                {
-                    if (pEnchant->spellid[s] == GetSpellInfo()->Id)
-                    {
-                        spellFound = true;
-                        break;
-                    }
-                }
-
-                if (spellFound)
-                    break;
-            }
-        }
-
-        if (!spellFound)
+        // check if the item is really the same, in case it has been wrapped for example
+        if (m_castItemEntry != m_CastItem->GetEntry())
             return false;
     }
 
