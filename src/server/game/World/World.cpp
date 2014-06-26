@@ -1079,6 +1079,8 @@ void World::LoadConfigSettings(bool reload)
 
     m_bool_configs[CONFIG_OFFHAND_CHECK_AT_SPELL_UNLEARN]            = sConfigMgr->GetBoolDefault("OffhandCheckAtSpellUnlearn", true);
 
+    m_int_configs[CONFIG_CREATURE_PICKPOCKET_REFILL] = sConfigMgr->GetIntDefault("Creature.PickPocketRefillDelay", 10 * MINUTE);
+
     if (int32 clientCacheId = sConfigMgr->GetIntDefault("ClientCacheVersion", 0))
     {
         // overwrite DB/old value
@@ -1298,6 +1300,10 @@ void World::LoadConfigSettings(bool reload)
 
     m_int_configs[CONFIG_PACKET_SPOOF_BANDURATION] = sConfigMgr->GetIntDefault("PacketSpoof.BanDuration", 86400);
 
+    m_bool_configs[CONFIG_IP_BASED_ACTION_LOGGING] = sConfigMgr->GetBoolDefault("Allow.IP.Based.Action.Logging", false);
+
+    m_bool_configs[CONFIG_IP_BASED_LOGIN_LOGGING] = sConfigMgr->GetBoolDefault("Wrong.Password.Login.Logging", false);
+
     // call ScriptMgr if we're reloading the configuration
     if (reload)
         sScriptMgr->OnConfigLoad(reload);
@@ -1458,7 +1464,7 @@ void World::SetInitialWorldSettings()
     sSpellMgr->LoadSpellGroupStackRules();
 
     TC_LOG_INFO("server.loading", "Loading Spell Phase Dbc Info...");
-    sObjectMgr->LoadSpellPhaseInfo();
+    sObjectMgr->LoadPhaseInfo();
 
     TC_LOG_INFO("server.loading", "Loading NPC Texts...");
     sObjectMgr->LoadGossipText();
@@ -3285,10 +3291,7 @@ CharacterNameData const* World::GetCharacterNameData(uint32 guid) const
 
 void World::UpdatePhaseDefinitions()
 {
-    SessionMap::const_iterator itr;
-    for (itr = m_sessions.begin(); itr != m_sessions.end(); ++itr)
-        if (itr->second && itr->second->GetPlayer() && itr->second->GetPlayer()->IsInWorld())
-            itr->second->GetPlayer()->GetPhaseMgr().NotifyStoresReloaded();
+
 }
 
 void World::ReloadRBAC()

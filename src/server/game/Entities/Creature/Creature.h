@@ -82,6 +82,7 @@ struct CreatureTemplate
     uint32  Modelid3;
     uint32  Modelid4;
     std::string  Name;
+    std::string FemaleName;
     std::string  SubName;
     std::string  IconName;
     uint32  GossipMenuId;
@@ -225,6 +226,7 @@ typedef std::unordered_map<uint16, CreatureBaseStats> CreatureBaseStatsContainer
 struct CreatureLocale
 {
     StringVector Name;
+    StringVector FemaleName;
     StringVector SubName;
 };
 
@@ -254,7 +256,7 @@ struct CreatureData
     CreatureData() : id(0), mapid(0), phaseMask(0), displayid(0), equipmentId(0),
                      posX(0.0f), posY(0.0f), posZ(0.0f), orientation(0.0f), spawntimesecs(0),
                      spawndist(0.0f), currentwaypoint(0), curhealth(0), curmana(0), movementType(0),
-                     spawnMask(0), npcflag(0), unit_flags(0), dynamicflags(0), dbData(true) { }
+                     spawnMask(0), npcflag(0), unit_flags(0), dynamicflags(0), phaseid(0), phaseGroup(0), dbData(true) { }
     uint32 id;                                              // entry in creature_template
     uint16 mapid;
     uint32 phaseMask;
@@ -274,6 +276,8 @@ struct CreatureData
     uint32 npcflag;
     uint32 unit_flags;                                      // enum UnitFlags mask values
     uint32 dynamicflags;
+    uint32 phaseid;
+    uint32 phaseGroup;
     bool dbData;
 };
 
@@ -546,6 +550,11 @@ class Creature : public Unit, public GridObject<Creature>, public MapObject
         Loot loot;
         bool lootForPickPocketed;
         bool lootForBody;
+        bool lootForSkinned;
+        void StartPickPocketRefillTimer();
+        void ResetPickPocketRefillTimer() { _pickpocketLootRestore = 0; }
+        void SetSkinner(uint64 guid) { _skinner = guid; }
+        uint64 GetSkinner() const { return _skinner; } // Returns the player who skinned this creature
         Player* GetLootRecipient() const;
         Group* GetLootRecipientGroup() const;
         bool hasLootRecipient() const { return m_lootRecipient || m_lootRecipientGroup; }
@@ -681,8 +690,10 @@ class Creature : public Unit, public GridObject<Creature>, public MapObject
 
         uint64 m_lootRecipient;
         uint32 m_lootRecipientGroup;
+        uint64 _skinner;
 
         /// Timers
+        time_t _pickpocketLootRestore;
         time_t m_corpseRemoveTime;                          // (msecs)timer for death or corpse disappearance
         time_t m_respawnTime;                               // (secs) time of next respawn
         uint32 m_respawnDelay;                              // (secs) delay between corpse disappearance and respawning

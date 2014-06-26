@@ -25,7 +25,6 @@
 
 #include "Item.h"
 #include "PetDefines.h"
-#include "PhaseMgr.h"
 #include "QuestDef.h"
 #include "SpellMgr.h"
 #include "Unit.h"
@@ -56,7 +55,6 @@ class PlayerMenu;
 class PlayerSocial;
 class SpellCastTargets;
 class UpdateMask;
-class PhaseMgr;
 
 typedef std::deque<Mail*> PlayerMails;
 
@@ -990,7 +988,7 @@ class PlayerTaxi
         bool SetTaximaskNode(uint32 nodeidx)
         {
             uint8  field   = uint8((nodeidx - 1) / 8);
-            uint32 submask = 1 << ((nodeidx-1) % 8);
+            uint32 submask = 1 << ((nodeidx-  1) % 8);
             if ((m_taximask[field] & submask) != submask)
             {
                 m_taximask[field] |= submask;
@@ -1023,7 +1021,7 @@ class PlayerTaxi
         std::deque<uint32> m_TaxiDestinations;
 };
 
-std::ostringstream& operator<< (std::ostringstream& ss, PlayerTaxi const& taxi);
+std::ostringstream& operator << (std::ostringstream& ss, PlayerTaxi const& taxi);
 
 class Player;
 
@@ -1332,8 +1330,6 @@ class Player : public Unit, public GridObject<Player>
         Pet* GetPet() const;
         Pet* SummonPet(uint32 entry, float x, float y, float z, float ang, PetType petType, uint32 despwtime);
         void RemovePet(Pet* pet, PetSaveMode mode, bool returnreagent = false);
-
-        PhaseMgr& GetPhaseMgr() { return phaseMgr; }
 
         /// Handles said message in regular chat based on declared language and in config pre-defined Range.
         void Say(std::string const& text, const uint32 language);
@@ -1898,7 +1894,7 @@ class Player : public Unit, public GridObject<Player>
         void UpdateZone(uint32 newZone, uint32 newArea);
         void UpdateArea(uint32 newArea);
         void SetNeedsZoneUpdate(bool needsUpdate) { m_needsZoneUpdate = needsUpdate; }
-        
+
         void UpdateZoneDependentAuras(uint32 zone_id);    // zones
         void UpdateAreaDependentAuras(uint32 area_id);    // subzones
 
@@ -2362,6 +2358,8 @@ class Player : public Unit, public GridObject<Player>
         void UpdateVisibilityOf(WorldObject* target);
         void UpdateTriggerVisibility();
 
+        void UpdatePhasing();
+
         template<class T>
         void UpdateVisibilityOf(T* target, UpdateData& data, std::set<Unit*>& visibleNow);
 
@@ -2524,6 +2522,8 @@ class Player : public Unit, public GridObject<Player>
 
         std::string GetMapAreaAndZoneString();
         std::string GetCoordsMapAreaAndZoneString();
+
+        bool IsLoading() const;
 
         // Void Storage
         bool IsVoidStorageUnlocked() const { return HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_VOID_UNLOCKED); }
@@ -2815,7 +2815,7 @@ class Player : public Unit, public GridObject<Player>
         bool IsAlwaysDetectableFor(WorldObject const* seer) const;
 
         uint8 m_grantableLevels;
-        
+
         bool m_needsZoneUpdate;
 
         CUFProfile* _CUFProfiles[MAX_CUF_PROFILES];
@@ -2888,12 +2888,10 @@ class Player : public Unit, public GridObject<Player>
 
         uint32 _activeCheats;
         uint32 _maxPersonalArenaRate;
-
-        PhaseMgr phaseMgr;
 };
 
-void AddItemsSetItem(Player*player, Item* item);
-void RemoveItemsSetItem(Player*player, ItemTemplate const* proto);
+void AddItemsSetItem(Player* player, Item* item);
+void RemoveItemsSetItem(Player* player, ItemTemplate const* proto);
 
 // "the bodies of template functions must be made available in a header file"
 template <class T> T Player::ApplySpellMod(uint32 spellId, SpellModOp op, T &basevalue, Spell* spell)

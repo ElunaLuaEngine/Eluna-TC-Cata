@@ -889,7 +889,8 @@ enum TrinityStrings
     LANG_CHARACTER_DELETED_LIST_LINE_CHAT = 1026,
     LANG_SQLDRIVER_QUERY_LOGGING_ENABLED  = 1027,
     LANG_SQLDRIVER_QUERY_LOGGING_DISABLED = 1028,
-    // Room for more level 4              1029-1099 not used
+    LANG_ACCOUNT_INVALID_BNET_NAME      = 1029,
+    // Room for more level 4              1030-1099 not used
 
     // Level 3 (continue)
     LANG_ACCOUNT_SETADDON               = 1100,
@@ -1232,7 +1233,8 @@ enum TrinityStrings
     LANG_BAN_ACCOUNT_YOUBANNEDMESSAGE_WORLD       = 11006,
     LANG_BAN_ACCOUNT_YOUPERMBANNEDMESSAGE_WORLD   = 11007,
 
-    LANG_NPCINFO_INHABIT_TYPE                     = 11008
+    LANG_NPCINFO_INHABIT_TYPE                     = 11008,
+    LANG_NPCINFO_FLAGS_EXTRA                      = 11009
 
     // NOT RESERVED IDS                   12000-1999999999
     // `db_script_string` table index     2000000000-2000009999 (MIN_DB_SCRIPT_STRING_ID-MAX_DB_SCRIPT_STRING_ID)

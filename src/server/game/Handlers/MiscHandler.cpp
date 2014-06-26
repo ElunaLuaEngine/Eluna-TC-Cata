@@ -545,7 +545,7 @@ void WorldSession::HandleZoneUpdateOpcode(WorldPacket& recvData)
 
     // use server side data, but only after update the player position. See Player::UpdatePosition().
     GetPlayer()->SetNeedsZoneUpdate(true);
- 
+
     //GetPlayer()->SendInitWorldStates(true, newZone);
 }
 
@@ -1280,7 +1280,7 @@ void WorldSession::HandleInspectOpcode(WorldPacket& recvData)
     {
         data << uint64(guild->GetGUID());
         data << uint32(guild->GetLevel());
-        data << uint64(0/*guild->GetXP()*/);
+        data << uint64(guild->GetExperience());
         data << uint32(guild->GetMembersCount());
     }
     SendPacket(&data);
@@ -1798,7 +1798,7 @@ void WorldSession::HandleReadyForAccountDataTimes(WorldPacket& /*recvData*/)
     SendAccountDataTimes(GLOBAL_CACHE_MASK);
 }
 
-void WorldSession::SendSetPhaseShift(std::set<uint32> const& phaseIds, std::set<uint32> const& terrainswaps)
+void WorldSession::SendSetPhaseShift(std::set<uint32> const& phaseIds, std::set<uint32> const& terrainswaps, std::set<uint32> const& worldMapAreaSwaps)
 {
     ObjectGuid guid = _player->GetGUID();
 
@@ -1815,9 +1815,9 @@ void WorldSession::SendSetPhaseShift(std::set<uint32> const& phaseIds, std::set<
     data.WriteByteSeq(guid[7]);
     data.WriteByteSeq(guid[4]);
 
-    data << uint32(0);
-    //for (uint8 i = 0; i < worldMapAreaCount; ++i)
-    //    data << uint16(0);                    // WorldMapArea.dbc id (controls map display)
+    data << uint32(worldMapAreaSwaps.size());
+    for (auto mapSwap : worldMapAreaSwaps)
+        data << uint16(mapSwap);                    // WorldMapArea.dbc id (controls map display)
 
     data.WriteByteSeq(guid[1]);
 
