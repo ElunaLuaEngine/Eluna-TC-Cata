@@ -22,7 +22,8 @@ before_install:
     - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 90 --slave /usr/bin/g++ g++ /usr/bin/g++-4.8
     - mkdir bin
     - cd bin
-    - cmake ../ -DWITH_WARNINGS=1 # -DWITH_COREDEBUG=1 -DUSE_COREPCH=1 -DUSE_SCRIPTPCH=1 -DTOOLS=1 -DSCRIPTS=1 -DSERVERS=1 -DCMAKE_BUILD_TYPE=Release
+    # -DWITH_COREDEBUG=1 fails build
+    - cmake ../ -DWITH_WARNINGS=1 -DWITH_COREDEBUG=0 -DUSE_COREPCH=1 -DUSE_SCRIPTPCH=1 -DTOOLS=1 -DSCRIPTS=1 -DSERVERS=1 -DCMAKE_BUILD_TYPE=Release
 
 script:
     - make -j 8
