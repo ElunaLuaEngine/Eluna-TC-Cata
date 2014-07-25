@@ -648,7 +648,7 @@ class spell_sha_healing_stream_totem : public SpellScriptLoader
 
             bool Validate(SpellInfo const* /*spellInfo*/) override
             {
-                return sSpellMgr->GetSpellInfo(SPELL_SHAMAN_TOTEM_HEALING_STREAM_HEAL);
+                return sSpellMgr->GetSpellInfo(SPELL_SHAMAN_TOTEM_HEALING_STREAM_HEAL) != nullptr;
             }
 
             void HandleDummy(SpellEffIndex /* effIndex */)
@@ -838,6 +838,42 @@ class spell_sha_item_mana_surge : public SpellScriptLoader
         AuraScript* GetAuraScript() const override
         {
             return new spell_sha_item_mana_surge_AuraScript();
+        }
+};
+
+// 70811 - Item - Shaman T10 Elemental 2P Bonus
+class spell_sha_item_t10_elemental_2p_bonus : public SpellScriptLoader
+{
+    public:
+        spell_sha_item_t10_elemental_2p_bonus() : SpellScriptLoader("spell_sha_item_t10_elemental_2p_bonus") { }
+
+        class spell_sha_item_t10_elemental_2p_bonus_AuraScript : public AuraScript
+        {
+            PrepareAuraScript(spell_sha_item_t10_elemental_2p_bonus_AuraScript);
+
+            bool Validate(SpellInfo const* /*spellInfo*/) override
+            {
+                if (!sSpellMgr->GetSpellInfo(SPELL_SHAMAN_ELEMENTAL_MASTERY))
+                    return false;
+                return true;
+            }
+
+            void HandleEffectProc(AuraEffect const* aurEff, ProcEventInfo& /*eventInfo*/)
+            {
+                PreventDefaultAction();
+                if (Player* target = GetTarget()->ToPlayer())
+                    target->ModifySpellCooldown(SPELL_SHAMAN_ELEMENTAL_MASTERY, -aurEff->GetAmount());
+            }
+
+            void Register() override
+            {
+                OnEffectProc += AuraEffectProcFn(spell_sha_item_t10_elemental_2p_bonus_AuraScript::HandleEffectProc, EFFECT_0, SPELL_AURA_DUMMY);
+            }
+        };
+
+        AuraScript* GetAuraScript() const override
+        {
+            return new spell_sha_item_t10_elemental_2p_bonus_AuraScript();
         }
 };
 
@@ -1205,6 +1241,7 @@ void AddSC_shaman_spell_scripts()
     new spell_sha_item_lightning_shield();
     new spell_sha_item_lightning_shield_trigger();
     new spell_sha_item_mana_surge();
+    new spell_sha_item_t10_elemental_2p_bonus();
     new spell_sha_lava_lash();
     new spell_sha_lava_surge();
     new spell_sha_lava_surge_proc();

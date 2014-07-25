@@ -55,9 +55,8 @@ AccountOpResult Battlenet::AccountMgr::ChangePassword(uint32 accountId, std::str
         return AccountOpResult::AOR_PASS_TOO_LONG;
 
     PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_BNET_PASSWORD);
-    stmt->setString(0, username);
-    stmt->setString(1, CalculateShaPassHash(username, newPassword));
-    stmt->setUInt32(2, accountId);
+    stmt->setString(0, CalculateShaPassHash(username, newPassword));
+    stmt->setUInt32(1, accountId);
     LoginDatabase.Execute(stmt);
 
     return AccountOpResult::AOR_OK;
@@ -109,9 +108,8 @@ bool Battlenet::AccountMgr::CheckPassword(uint32 accountId, std::string password
     PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_BNET_CHECK_PASSWORD);
     stmt->setUInt32(0, accountId);
     stmt->setString(1, CalculateShaPassHash(username, password));
-    PreparedQueryResult result = LoginDatabase.Query(stmt);
 
-    return !result.null();
+    return LoginDatabase.Query(stmt) != nullptr;
 }
 
 std::string Battlenet::AccountMgr::CalculateShaPassHash(std::string const& name, std::string const& password)

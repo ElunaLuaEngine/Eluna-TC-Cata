@@ -305,7 +305,8 @@ void WorldSession::HandleWhoOpcode(WorldPacket& recvData)
     data << uint32(matchcount);                           // placeholder, count of players matching criteria
     data << uint32(displaycount);                         // placeholder, count of players displayed
 
-    TRINITY_READ_GUARD(HashMapHolder<Player>::LockType, *HashMapHolder<Player>::GetLock());
+    boost::shared_lock<boost::shared_mutex> lock(*HashMapHolder<Player>::GetLock());
+
     HashMapHolder<Player>::MapType const& m = sObjectAccessor->GetPlayers();
     for (HashMapHolder<Player>::MapType::const_iterator itr = m.begin(); itr != m.end(); ++itr)
     {
@@ -1718,16 +1719,8 @@ void WorldSession::HandleMoveSetCanFlyAckOpcode(WorldPacket& recvData)
     // fly mode on/off
     TC_LOG_DEBUG("network", "WORLD: CMSG_MOVE_SET_CAN_FLY_ACK");
 
-    uint64 guid;                                            // guid - unused
-    recvData.readPackGUID(guid);
-
-    recvData.read_skip<uint32>();                          // unk
-
     MovementInfo movementInfo;
-    movementInfo.guid = guid;
     _player->ReadMovementInfo(recvData, &movementInfo);
-
-    recvData.read_skip<float>();                           // unk2
 
     _player->m_mover->m_movementInfo.flags = movementInfo.GetMovementFlags();
 }

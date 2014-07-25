@@ -20,6 +20,7 @@
     \ingroup world
 */
 
+#include <atomic>
 #include "Common.h"
 #include "Memory.h"
 #include "DatabaseEnv.h"
@@ -84,9 +85,10 @@
 #include "TransportMgr.h"
 #include "LuaEngine.h"
 
-ACE_Atomic_Op<ACE_Thread_Mutex, bool> World::m_stopEvent = false;
+
+std::atomic<bool> World::m_stopEvent(false);
 uint8 World::m_ExitCode = SHUTDOWN_EXIT_CODE;
-ACE_Atomic_Op<ACE_Thread_Mutex, uint32> World::m_worldLoopCounter = 0;
+std::atomic<uint32> World::m_worldLoopCounter(0);
 
 float World::m_MaxVisibleDistanceOnContinents = DEFAULT_VISIBILITY_DISTANCE;
 float World::m_MaxVisibleDistanceInInstances  = DEFAULT_VISIBILITY_INSTANCE;
@@ -682,7 +684,7 @@ void World::LoadConfigSettings(bool reload)
     m_bool_configs[CONFIG_ALLOW_TWO_SIDE_INTERACTION_GROUP]   = sConfigMgr->GetBoolDefault("AllowTwoSide.Interaction.Group", false);
     m_bool_configs[CONFIG_ALLOW_TWO_SIDE_INTERACTION_GUILD]   = sConfigMgr->GetBoolDefault("AllowTwoSide.Interaction.Guild", false);
     m_bool_configs[CONFIG_ALLOW_TWO_SIDE_INTERACTION_AUCTION] = sConfigMgr->GetBoolDefault("AllowTwoSide.Interaction.Auction", false);
-    m_bool_configs[CONFIG_ALLOW_TWO_SIDE_TRADE]               = sConfigMgr->GetBoolDefault("AllowTwoSide.trade", false);
+    m_bool_configs[CONFIG_ALLOW_TWO_SIDE_TRADE]               = sConfigMgr->GetBoolDefault("AllowTwoSide.Trade", false);
     m_int_configs[CONFIG_STRICT_PLAYER_NAMES]                 = sConfigMgr->GetIntDefault ("StrictPlayerNames",  0);
     m_int_configs[CONFIG_STRICT_CHARTER_NAMES]                = sConfigMgr->GetIntDefault ("StrictCharterNames", 0);
     m_int_configs[CONFIG_STRICT_PET_NAMES]                    = sConfigMgr->GetIntDefault ("StrictPetNames",     0);
@@ -991,7 +993,7 @@ void World::LoadConfigSettings(bool reload)
     m_int_configs[CONFIG_CHATFLOOD_MESSAGE_DELAY] = sConfigMgr->GetIntDefault("ChatFlood.MessageDelay", 1);
     m_int_configs[CONFIG_CHATFLOOD_MUTE_TIME]     = sConfigMgr->GetIntDefault("ChatFlood.MuteTime", 10);
 
-    m_bool_configs[CONFIG_EVENT_ANNOUNCE] = sConfigMgr->GetIntDefault("Event.Announce", false);
+    m_bool_configs[CONFIG_EVENT_ANNOUNCE] = sConfigMgr->GetBoolDefault("Event.Announce", false);
 
     m_float_configs[CONFIG_CREATURE_FAMILY_FLEE_ASSISTANCE_RADIUS] = sConfigMgr->GetFloatDefault("CreatureFamilyFleeAssistanceRadius", 30.0f);
     m_float_configs[CONFIG_CREATURE_FAMILY_ASSISTANCE_RADIUS] = sConfigMgr->GetFloatDefault("CreatureFamilyAssistanceRadius", 10.0f);
@@ -1301,8 +1303,6 @@ void World::LoadConfigSettings(bool reload)
     m_int_configs[CONFIG_PACKET_SPOOF_BANDURATION] = sConfigMgr->GetIntDefault("PacketSpoof.BanDuration", 86400);
 
     m_bool_configs[CONFIG_IP_BASED_ACTION_LOGGING] = sConfigMgr->GetBoolDefault("Allow.IP.Based.Action.Logging", false);
-
-    m_bool_configs[CONFIG_IP_BASED_LOGIN_LOGGING] = sConfigMgr->GetBoolDefault("Wrong.Password.Login.Logging", false);
 
     // call ScriptMgr if we're reloading the configuration
     if (reload)
@@ -1817,7 +1817,7 @@ void World::SetInitialWorldSettings()
     //one second is 1000 -(tested on win system)
     /// @todo Get rid of magic numbers
     tm localTm;
-    ACE_OS::localtime_r(&m_gameTime, &localTm);
+    localtime_r(&m_gameTime, &localTm);
     mail_timer = ((((localTm.tm_hour + 20) % 24)* HOUR * IN_MILLISECONDS) / m_timers[WUPDATE_AUCTIONS].GetInterval());
                                                             //1440
     mail_timer_expires = ((DAY * IN_MILLISECONDS) / (m_timers[WUPDATE_AUCTIONS].GetInterval()));
@@ -1847,7 +1847,7 @@ void World::SetInitialWorldSettings()
 
     ///- Initialize Battlegrounds
     TC_LOG_INFO("server.loading", "Starting Battleground System");
-    sBattlegroundMgr->CreateInitialBattlegrounds();
+    sBattlegroundMgr->LoadBattlegroundTemplates();
 
     ///- Initialize outdoor pvp
     TC_LOG_INFO("server.loading", "Starting Outdoor PvP System");
@@ -2637,7 +2637,7 @@ void World::ShutdownMsg(bool show, Player* player)
 void World::ShutdownCancel()
 {
     // nothing cancel or too later
-    if (!m_ShutdownTimer || m_stopEvent.value())
+    if (!m_ShutdownTimer || m_stopEvent)
         return;
 
     ServerMessageType msgid = (m_ShutdownMask & SHUTDOWN_MASK_RESTART) ? SERVER_MSG_RESTART_CANCELLED : SERVER_MSG_SHUTDOWN_CANCELLED;
@@ -2780,7 +2780,7 @@ void World::UpdateRealmCharCount(uint32 accountId)
     PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHARACTER_COUNT);
     stmt->setUInt32(0, accountId);
     PreparedQueryResultFuture result = CharacterDatabase.AsyncQuery(stmt);
-    m_realmCharCallbacks.insert(result);
+    m_realmCharCallbacks.push_back(std::move(result));
 }
 
 void World::_UpdateRealmCharCount(PreparedQueryResult resultCharCount)
@@ -2828,7 +2828,7 @@ void World::InitDailyQuestResetTime()
     // FIX ME: client not show day start time
     time_t curTime = time(NULL);
     tm localTm;
-    ACE_OS::localtime_r(&curTime, &localTm);
+    localtime_r(&curTime, &localTm);
     localTm.tm_hour = 6;
     localTm.tm_min  = 0;
     localTm.tm_sec  = 0;
@@ -2862,7 +2862,7 @@ void World::InitRandomBGResetTime()
     // generate time by config
     time_t curTime = time(NULL);
     tm localTm;
-    ACE_OS::localtime_r(&curTime, &localTm);
+    localtime_r(&curTime, &localTm);
     localTm.tm_hour = getIntConfig(CONFIG_RANDOM_BG_RESET_HOUR);
     localTm.tm_min = 0;
     localTm.tm_sec = 0;
@@ -2890,7 +2890,7 @@ void World::InitGuildResetTime()
     // generate time by config
     time_t curTime = time(NULL);
     tm localTm;
-    ACE_OS::localtime_r(&curTime, &localTm);
+    localtime_r(&curTime, &localTm);
     localTm.tm_hour = getIntConfig(CONFIG_GUILD_RESET_HOUR);
     localTm.tm_min = 0;
     localTm.tm_sec = 0;
@@ -3016,7 +3016,7 @@ void World::ResetMonthlyQuests()
     // generate time
     time_t curTime = time(NULL);
     tm localTm;
-    ACE_OS::localtime_r(&curTime, &localTm);
+    localtime_r(&curTime, &localTm);
 
     int month   = localTm.tm_mon;
     int year    = localTm.tm_year;
@@ -3181,19 +3181,17 @@ void World::ProcessQueryCallbacks()
 {
     PreparedQueryResult result;
 
-    while (!m_realmCharCallbacks.is_empty())
+    for (std::deque<std::future<PreparedQueryResult>>::iterator itr = m_realmCharCallbacks.begin(); itr != m_realmCharCallbacks.end(); )
     {
-        ACE_Future<PreparedQueryResult> lResult;
-        ACE_Time_Value timeout = ACE_Time_Value::zero;
-        if (m_realmCharCallbacks.next_readable(lResult, &timeout) != 1)
-            break;
-
-        if (lResult.ready())
+        if ((*itr).wait_for(std::chrono::seconds(0)) != std::future_status::ready)
         {
-            lResult.get(result);
-            _UpdateRealmCharCount(result);
-            lResult.cancel();
+            ++itr;
+            continue;
         }
+
+        result = (*itr).get();
+        _UpdateRealmCharCount(result);
+        itr = m_realmCharCallbacks.erase(itr);
     }
 }
 

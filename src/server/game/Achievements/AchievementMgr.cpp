@@ -388,6 +388,8 @@ bool AchievementCriteriaData::Meets(uint32 criteria_id, Player const* source, Un
                 return false;
             return pProto->ItemLevel >= equipped_item.item_level && pProto->Quality >= equipped_item.item_quality;
         }
+        case ACHIEVEMENT_CRITERIA_DATA_TYPE_MAP_ID:
+            return source->GetMapId() == map_id.mapId;
         case ACHIEVEMENT_CRITERIA_DATA_TYPE_S_KNOWN_TITLE:
         {
             if (CharTitlesEntry const* titleInfo = sCharTitlesStore.LookupEntry(known_title.title_id))
@@ -2676,13 +2678,6 @@ bool AchievementMgr<T>::AdditionalRequirementsSatisfied(AchievementCriteriaEntry
     for (uint8 i = 0; i < MAX_ADDITIONAL_CRITERIA_CONDITIONS; ++i)
     {
         uint32 reqType = criteria->additionalConditionType[i];
-
-        ///@TODO Extract additionalConditionValue[2] column from an older dbc and store it in database
-        ///      This column is not present in 4.3.4 Achievement_Criteria.dbc
-        ///      so for now, just return as failed condition to prevent invalid memory access
-        if (i == 2 && reqType)
-            return false;
-
         uint32 reqValue = criteria->additionalConditionValue[i];
 
         switch (AchievementCriteriaAdditionalCondition(reqType))

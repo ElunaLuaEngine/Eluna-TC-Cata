@@ -25,7 +25,7 @@
 char const Achievementfmt[] = "niixsxiixixxii";
 const std::string CustomAchievementfmt = "pppaaaapapaapp";
 const std::string CustomAchievementIndex = "ID";
-char const AchievementCriteriafmt[] = "niiiixiiiisiiiiixxiiiii";
+char const AchievementCriteriafmt[] = "niiiliiiisiiiiixxiiiiii";
 char const AreaTableEntryfmt[] = "iiinixxxxxisiiiiiffixxxxxx";
 char const AreaGroupEntryfmt[] = "niiiiiii";
 char const AreaPOIEntryfmt[] = "niiiiiiiiiiiffixixxixx";
@@ -122,7 +122,7 @@ char const ScalingStatDistributionfmt[] = "niiiiiiiiiiiiiiiiiiiixi";
 char const ScalingStatValuesfmt[] = "iniiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii";
 char const SkillLinefmt[] = "nisxixi";
 char const SkillLineAbilityfmt[] = "niiiixxiiiiiii";
-char const SkillRaceClassInfofmt[] = "diiiixixx";
+char const SkillRaceClassInfofmt[] = "diiiixxix";
 char const SkillTiersfmt[] = "nxxxxxxxxxxxxxxxxiiiiiiiiiiiiiiii";
 char const SoundEntriesfmt[] = "nxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 char const SpellCastTimefmt[] = "nixx";

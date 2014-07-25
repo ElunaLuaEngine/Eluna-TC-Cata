@@ -21,21 +21,29 @@
 
 #include "CompilerDefs.h"
 
-#include <ace/Basic_Types.h>
-#include <ace/ACE_export.h>
+#if COMPILER == COMPILER_GNU
+#  if !defined(__STDC_FORMAT_MACROS)
+#    define __STDC_FORMAT_MACROS
+#  endif
+#  if !defined(__STDC_CONSTANT_MACROS)
+#    define __STDC_CONSTANT_MACROS
+#  endif
+#endif
 
 #include <cstddef>
+#include <cinttypes>
+#include <climits>
 
 #define TRINITY_LITTLEENDIAN 0
 #define TRINITY_BIGENDIAN    1
 
 #if !defined(TRINITY_ENDIAN)
-#  if defined (ACE_BIG_ENDIAN)
+#  if defined (BOOST_BIG_ENDIAN)
 #    define TRINITY_ENDIAN TRINITY_BIGENDIAN
-#  else //ACE_BYTE_ORDER != ACE_BIG_ENDIAN
+#  else
 #    define TRINITY_ENDIAN TRINITY_LITTLEENDIAN
-#  endif //ACE_BYTE_ORDER
-#endif //TRINITY_ENDIAN
+#  endif
+#endif
 
 #if PLATFORM == PLATFORM_WINDOWS
 #  define TRINITY_PATH_MAX MAX_PATH
@@ -70,35 +78,34 @@
 #  define ATTR_DEPRECATED
 #endif //COMPILER == COMPILER_GNU
 
-#define UI64FMTD ACE_UINT64_FORMAT_SPECIFIER
-#define UI64LIT(N) ACE_UINT64_LITERAL(N)
+#define UI64FMTD "%" PRIu64
+#define UI64LIT(N) UINT64_C(N)
 
-#define SI64FMTD ACE_INT64_FORMAT_SPECIFIER
-#define SI64LIT(N) ACE_INT64_LITERAL(N)
+#define SI64FMTD "%" PRId64
+#define SI64LIT(N) INT64_C(N)
 
-#define SIZEFMTD ACE_SIZE_T_FORMAT_SPECIFIER
-
-typedef ACE_INT64 int64;
-typedef ACE_INT32 int32;
-typedef ACE_INT16 int16;
-typedef ACE_INT8 int8;
-typedef ACE_UINT64 uint64;
-typedef ACE_UINT32 uint32;
-typedef ACE_UINT16 uint16;
-typedef ACE_UINT8 uint8;
+typedef int64_t int64;
+typedef int32_t int32;
+typedef int16_t int16;
+typedef int8_t int8;
+typedef uint64_t uint64;
+typedef uint32_t uint32;
+typedef uint16_t uint16;
+typedef uint8_t uint8;
 
 enum DBCFormer
 {
-    FT_NA='x',                                              //not used or unknown, 4 byte size
-    FT_NA_BYTE='X',                                         //not used or unknown, byte
-    FT_STRING='s',                                          //char*
-    FT_FLOAT='f',                                           //float
-    FT_INT='i',                                             //uint32
-    FT_BYTE='b',                                            //uint8
-    FT_SORT='d',                                            //sorted by this field, field is not included
-    FT_IND='n',                                             //the same, but parsed to data
-    FT_SQL_PRESENT='p',                                     //Used in sql format to mark column present in sql dbc
-    FT_SQL_ABSENT='a'                                       //Used in sql format to mark column absent in sql dbc
+    FT_NA = 'x',                                            //not used or unknown, 4 byte size
+    FT_NA_BYTE = 'X',                                       //not used or unknown, byte
+    FT_STRING = 's',                                        //char*
+    FT_FLOAT = 'f',                                         //float
+    FT_INT = 'i',                                           //uint32
+    FT_BYTE = 'b',                                          //uint8
+    FT_LONG = 'l',                                          //uint64
+    FT_SORT = 'd',                                          //sorted by this field, field is not included
+    FT_IND = 'n',                                           //the same, but parsed to data
+    FT_SQL_PRESENT = 'p',                                   //Used in sql format to mark column present in sql dbc
+    FT_SQL_ABSENT = 'a'                                     //Used in sql format to mark column absent in sql dbc
 };
 
 #endif //TRINITY_DEFINE_H

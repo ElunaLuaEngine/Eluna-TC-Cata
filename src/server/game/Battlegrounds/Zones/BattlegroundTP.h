@@ -19,12 +19,35 @@
 #define __BATTLEGROUNDTP_H
 
 #include "Battleground.h"
+#include "BattlegroundScore.h"
 
-class BattlegroundTPScore : public BattlegroundScore
+class BattlegroundTPScore final : public BattlegroundScore
 {
-    public:
-        BattlegroundTPScore() : FlagCaptures(0), FlagReturns(0) {};
-        virtual ~BattlegroundTPScore() {};
+    protected:
+        BattlegroundTPScore(uint64 playerGuid, uint32 team) : BattlegroundScore(playerGuid, team), FlagCaptures(0), FlagReturns(0) { }
+
+        void UpdateScore(uint32 type, uint32 value) override
+        {
+            switch (type)
+            {
+                case SCORE_FLAG_CAPTURES:
+                    FlagCaptures += value;
+                    break;
+                case SCORE_FLAG_RETURNS:
+                    FlagReturns += value;
+                    break;
+                default:
+                    BattlegroundScore::UpdateScore(type, value);
+                    break;
+            }
+        }
+
+        void BuildObjectivesBlock(WorldPacket& data, ByteBuffer& content) final
+        {
+            data.WriteBits(2, 24); // Objectives Count
+            content << uint32(FlagCaptures);
+            content << uint32(FlagReturns);
+        }
 
         uint32 FlagCaptures;
         uint32 FlagReturns;

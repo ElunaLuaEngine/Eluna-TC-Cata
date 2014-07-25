@@ -523,6 +523,7 @@ void Pet::setDeathState(DeathState s)                       // overwrite virtual
             // pet corpse non lootable and non skinnable
             SetUInt32Value(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_NONE);
             RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_SKINNABLE);
+
             //SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_STUNNED);
         }
     }
@@ -1049,7 +1050,7 @@ bool Pet::HaveInDiet(ItemTemplate const* item) const
 
     uint32 diet = cFamily->petFoodMask;
     uint32 FoodMask = 1 << (item->FoodType-1);
-    return diet & FoodMask;
+    return (diet & FoodMask) != 0;
 }
 
 uint32 Pet::GetCurrentFoodBenefitLevel(uint32 itemlevel) const

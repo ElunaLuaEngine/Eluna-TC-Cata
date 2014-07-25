@@ -174,13 +174,13 @@ namespace Trinity
     template<class Check>
     struct WorldObjectSearcher
     {
-        uint32 i_mapTypeMask;
-        WorldObject*& i_object;
         WorldObject const* _searcher;
+        WorldObject*& i_object;
         Check &i_check;
+        uint32 i_mapTypeMask;
 
         WorldObjectSearcher(WorldObject const* searcher, WorldObject* & result, Check& check, uint32 mapTypeMask = GRID_MAP_TYPE_MASK_ALL)
-            : i_mapTypeMask(mapTypeMask), _searcher(searcher), i_object(result), i_check(check) { }
+            : _searcher(searcher), i_object(result), i_check(check), i_mapTypeMask(mapTypeMask) { }
 
         void Visit(GameObjectMapType &m);
         void Visit(PlayerMapType &m);
@@ -195,13 +195,13 @@ namespace Trinity
     template<class Check>
     struct WorldObjectLastSearcher
     {
-        uint32 i_mapTypeMask;
-        WorldObject* &i_object;
         WorldObject const* _searcher;
+        WorldObject* &i_object;
         Check &i_check;
+        uint32 i_mapTypeMask;
 
         WorldObjectLastSearcher(WorldObject const* searcher, WorldObject* & result, Check& check, uint32 mapTypeMask = GRID_MAP_TYPE_MASK_ALL)
-            :  i_mapTypeMask(mapTypeMask), _searcher(searcher), i_object(result), i_check(check) { }
+            : _searcher(searcher), i_object(result), i_check(check), i_mapTypeMask(mapTypeMask) { }
 
         void Visit(GameObjectMapType &m);
         void Visit(PlayerMapType &m);
@@ -633,7 +633,7 @@ namespace Trinity
                 if (go->GetGOInfo()->spellFocus.focusId != i_focusId)
                     return false;
 
-                float dist = (float)((go->GetGOInfo()->spellFocus.dist)/2);
+                float dist = go->GetGOInfo()->spellFocus.dist / 2.f;
 
                 return go->IsWithinDistInMap(i_unit, dist);
             }
@@ -957,13 +957,13 @@ namespace Trinity
                 if (owner)
                     check = owner;
                 i_targetForPlayer = (check->GetTypeId() == TYPEID_PLAYER);
-                if (i_obj->GetTypeId() == TYPEID_DYNAMICOBJECT)
-                    _spellInfo = sSpellMgr->GetSpellInfo(((DynamicObject*)i_obj)->GetSpellId());
+                if (DynamicObject const* dynObj = i_obj->ToDynObject())
+                    _spellInfo = sSpellMgr->GetSpellInfo(dynObj->GetSpellId());
             }
             bool operator()(Unit* u)
             {
                 // Check contains checks for: live, non-selectable, non-attackable flags, flight check and GM check, ignore totems
-                if (u->GetTypeId() == TYPEID_UNIT && ((Creature*)u)->IsTotem())
+                if (u->GetTypeId() == TYPEID_UNIT && u->ToCreature()->IsTotem())
                     return false;
 
                 if (i_funit->_IsValidAttackTarget(u, _spellInfo, i_obj->GetTypeId() == TYPEID_DYNAMICOBJECT ? i_obj : NULL) && i_obj->IsWithinDistInMap(u, i_range))
