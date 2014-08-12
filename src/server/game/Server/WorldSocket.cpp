@@ -23,7 +23,9 @@
 #include "ScriptMgr.h"
 #include "SHA1.h"
 #include "PacketLog.h"
+#ifdef ELUNA
 #include "LuaEngine.h"
+#endif
 #include "BattlenetAccountMgr.h"
 
 using boost::asio::ip::tcp;
@@ -173,11 +175,6 @@ void WorldSocket::AsyncWrite(WorldPacket& packet)
 {
     if (!IsOpen())
         return;
-
-#ifdef ELUNA
-    if (!sEluna->OnPacketSend(_worldSession, packet))
-        return;
-#endif
 
     if (sPacketLog->CanLogPacket())
         sPacketLog->LogPacket(packet, SERVER_TO_CLIENT, GetRemoteIpAddress(), GetRemotePort());

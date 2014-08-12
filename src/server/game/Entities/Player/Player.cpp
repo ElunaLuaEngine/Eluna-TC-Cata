@@ -81,7 +81,9 @@
 #include "WorldSession.h"
 #include "MovementStructures.h"
 #include "GameObjectAI.h"
+#ifdef ELUNA
 #include "LuaEngine.h"
+#endif
 
 #define ZONE_UPDATE_INTERVAL (1*IN_MILLISECONDS)
 

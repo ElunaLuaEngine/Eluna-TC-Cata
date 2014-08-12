@@ -47,7 +47,9 @@
 #include "Transport.h"
 #include "WardenWin.h"
 #include "WardenMac.h"
+#ifdef ELUNA
 #include "LuaEngine.h"
+#endif
 
 namespace {
 
@@ -268,6 +270,11 @@ void WorldSession::SendPacket(WorldPacket* packet, bool forced /*= false*/)
 #endif                                                      // !TRINITY_DEBUG
 
     sScriptMgr->OnPacketSend(this, *packet);
+
+#ifdef ELUNA
+    if (!sEluna->OnPacketSend(this, *packet))
+        return;
+#endif
 
     m_Socket->AsyncWrite(*packet);
 }

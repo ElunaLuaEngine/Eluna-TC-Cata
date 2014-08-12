@@ -61,7 +61,9 @@
 #include "WorldPacket.h"
 #include "MovementStructures.h"
 #include "WorldSession.h"
+#ifdef ELUNA
 #include "LuaEngine.h"
+#endif
 
 #include <math.h>
 

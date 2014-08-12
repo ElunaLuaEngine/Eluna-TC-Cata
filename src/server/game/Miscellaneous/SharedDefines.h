@@ -23,8 +23,10 @@
 #include "DetourNavMesh.h"
 #include <cassert>
 
+#ifdef ELUNA
 #define TRINITY
 #define CATA
+#endif
 
 enum SpellEffIndex
 {

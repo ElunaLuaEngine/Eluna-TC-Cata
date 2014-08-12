@@ -29,7 +29,9 @@
 #include "Player.h"
 #include "Opcodes.h"
 #include "WorldSession.h"
+#ifdef ELUNA
 #include "LuaEngine.h"
+#endif
 
 void AddItemsSetItem(Player* player, Item* item)
 {
