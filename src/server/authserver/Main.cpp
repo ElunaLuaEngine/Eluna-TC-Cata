@@ -70,18 +70,18 @@ int main(int argc, char** argv)
     if (vm.count("help"))
         return 0;
 
-    if (!sConfigMgr->LoadInitial(configFile))
+    std::string configError;
+    if (!sConfigMgr->LoadInitial(configFile, configError))
     {
-        printf("Invalid or missing configuration file : %s\n", configFile.c_str());
-        printf("Verify that the file exists and has \'[authserver]\' written in the top of the file!\n");
+        printf("Error in config file: %s\n", configError.c_str());
         return 1;
     }
 
     TC_LOG_INFO("server.authserver", "%s (authserver)", _FULLVERSION);
     TC_LOG_INFO("server.authserver", "<Ctrl-C> to stop.\n");
     TC_LOG_INFO("server.authserver", "Using configuration file %s.", configFile.c_str());
-    TC_LOG_INFO("server.worldserver", "Using SSL version: %s (library: %s)", OPENSSL_VERSION_TEXT, SSLeay_version(SSLEAY_VERSION));
-    TC_LOG_INFO("server.worldserver", "Using Boost version: %i.%i.%i", BOOST_VERSION / 100000, BOOST_VERSION / 100 % 1000, BOOST_VERSION % 100);
+    TC_LOG_INFO("server.authserver", "Using SSL version: %s (library: %s)", OPENSSL_VERSION_TEXT, SSLeay_version(SSLEAY_VERSION));
+    TC_LOG_INFO("server.authserver", "Using Boost version: %i.%i.%i", BOOST_VERSION / 100000, BOOST_VERSION / 100 % 1000, BOOST_VERSION % 100);
 
     // authserver PID file creation
     std::string pidFile = sConfigMgr->GetStringDefault("PidFile", "");
@@ -106,6 +106,7 @@ int main(int argc, char** argv)
     if (sRealmList->size() == 0)
     {
         TC_LOG_ERROR("server.authserver", "No valid realms specified.");
+        StopDB();
         return 1;
     }
 
@@ -114,6 +115,7 @@ int main(int argc, char** argv)
     if (port < 0 || port > 0xFFFF)
     {
         TC_LOG_ERROR("server.authserver", "Specified port out of allowed range (1-65535)");
+        StopDB();
         return 1;
     }
 

@@ -53,6 +53,7 @@ struct AuctionEntry;
 struct DeclinedName;
 struct ItemTemplate;
 struct MovementInfo;
+struct TradeStatusInfo;
 
 namespace lfg
 {
@@ -159,9 +160,9 @@ public:
     explicit MapSessionFilter(WorldSession* pSession) : PacketFilter(pSession) { }
     ~MapSessionFilter() { }
 
-    virtual bool Process(WorldPacket* packet);
+    virtual bool Process(WorldPacket* packet) override;
     //in Map::Update() we do not process player logout!
-    virtual bool ProcessLogout() const { return false; }
+    virtual bool ProcessLogout() const override { return false; }
 };
 
 //class used to filer only thread-unsafe packets from queue
@@ -172,7 +173,7 @@ public:
     explicit WorldSessionFilter(WorldSession* pSession) : PacketFilter(pSession) { }
     ~WorldSessionFilter() { }
 
-    virtual bool Process(WorldPacket* packet);
+    virtual bool Process(WorldPacket* packet) override;
 };
 
 // Proxy structure to contain data passed to callback function,
@@ -185,7 +186,7 @@ class CharacterCreateInfo
     protected:
         CharacterCreateInfo(std::string const& name, uint8 race, uint8 cclass, uint8 gender, uint8 skin, uint8 face, uint8 hairStyle, uint8 hairColor, uint8 facialHair, uint8 outfitId,
         WorldPacket& data) : Name(name), Race(race), Class(cclass), Gender(gender), Skin(skin), Face(face), HairStyle(hairStyle), HairColor(hairColor), FacialHair(facialHair),
-        OutfitId(outfitId), Data(data), CharCount(0)
+        OutfitId(outfitId), Data(std::move(data)), CharCount(0)
         { }
 
         /// User specified variables
@@ -227,7 +228,7 @@ class WorldSession
         void SendAddonsInfo();
         bool IsAddonRegistered(const std::string& prefix) const;
 
-        void SendPacket(WorldPacket const* packet, bool forced = false);
+        void SendPacket(WorldPacket* packet, bool forced = false);
         void SendNotification(const char *format, ...) ATTR_PRINTF(2, 3);
         void SendNotification(uint32 string_id, ...);
         void SendPetNameInvalid(uint32 error, std::string const& name, DeclinedName *declinedName);
@@ -303,7 +304,7 @@ class WorldSession
 
         void SendBattleGroundList(uint64 guid, BattlegroundTypeId bgTypeId = BATTLEGROUND_RB);
 
-        void SendTradeStatus(TradeStatus status, int8 clearSlot = 0);
+        void SendTradeStatus(TradeStatusInfo const& status);
         void SendUpdateTrade(bool trader_data = true);
         void SendCancelTrade();
 
