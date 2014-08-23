@@ -137,7 +137,7 @@ void WorldSocket::ReadDataHandler()
                 TC_LOG_DEBUG("network", "%s", opcodeName.c_str());
                 sScriptMgr->OnPacketReceive(_worldSession, packet);
 #ifdef ELUNA
-                sEluna->OnPacketReceive(_worldSession, packet)
+                sEluna->OnPacketReceive(_worldSession, packet);
 #endif
                 return;
             case CMSG_ENABLE_NAGLE:
