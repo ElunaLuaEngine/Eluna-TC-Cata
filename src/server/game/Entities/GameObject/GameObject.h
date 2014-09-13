@@ -837,11 +837,6 @@ class GameObject : public WorldObject, public GridObject<GameObject>, public Map
 
         float GetInteractionDistance() const;
 
-#ifdef ELUNA
-        // Event handler
-        EventProcessor m_Events;
-#endif
-
         void UpdateModelPosition();
 
     protected:

@@ -64,6 +64,7 @@
 #include "WorldSession.h"
 #ifdef ELUNA
 #include "LuaEngine.h"
+#include "ElunaEventMgr.h"
 #endif
 
 #include <cmath>
@@ -317,6 +318,10 @@ Unit::~Unit()
 
 void Unit::Update(uint32 p_time)
 {
+#ifdef ELUNA
+    elunaEvents->Update(p_time);
+#endif
+
     // WARNING! Order of execution here is important, do not change.
     // Spells must be processed with event system BEFORE they go to _UpdateSpells.
     // Or else we may have some SPELL_STATE_FINISHED spells stalled in pointers, that is bad.
