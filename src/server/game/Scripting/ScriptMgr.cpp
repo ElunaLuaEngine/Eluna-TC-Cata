@@ -860,31 +860,13 @@ bool ScriptMgr::OnQuestSelect(Player* player, Creature* creature, Quest const* q
     return tmpscript->OnQuestSelect(player, creature, quest);
 }
 
-bool ScriptMgr::OnQuestComplete(Player* player, Creature* creature, Quest const* quest)
-{
-    ASSERT(player);
-    ASSERT(creature);
-    ASSERT(quest);
-#ifdef ELUNA
-    if (sEluna->OnQuestComplete(player, creature, quest))
-    {
-        player->PlayerTalkClass->ClearMenus();
-        return false;
-    }
-#endif
-
-    GET_SCRIPT_RET(CreatureScript, creature->GetScriptId(), tmpscript, false);
-    player->PlayerTalkClass->ClearMenus();
-    return tmpscript->OnQuestComplete(player, creature, quest);
-}
-
 bool ScriptMgr::OnQuestReward(Player* player, Creature* creature, Quest const* quest, uint32 opt)
 {
     ASSERT(player);
     ASSERT(creature);
     ASSERT(quest);
 #ifdef ELUNA
-    if (sEluna->OnQuestReward(player, creature, quest))
+    if (sEluna->OnQuestReward(player, creature, quest, opt))
     {
         player->PlayerTalkClass->ClearMenus();
         return false;
@@ -1006,7 +988,7 @@ bool ScriptMgr::OnQuestReward(Player* player, GameObject* go, Quest const* quest
     ASSERT(go);
     ASSERT(quest);
 #ifdef ELUNA
-    if (sEluna->OnQuestReward(player, go, quest))
+    if (sEluna->OnQuestReward(player, go, quest, opt))
         return false;
 #endif
 
