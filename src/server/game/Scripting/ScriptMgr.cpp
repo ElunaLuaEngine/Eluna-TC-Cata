@@ -198,10 +198,6 @@ void ScriptMgr::Initialize()
     AddScripts();
 
     TC_LOG_INFO("server.loading", ">> Loaded %u C++ scripts in %u ms", GetScriptCount(), GetMSTimeDiffToNow(oldMSTime));
-
-#ifdef ELUNA
-    Eluna::Initialize();
-#endif
 }
 
 void ScriptMgr::Unload()
