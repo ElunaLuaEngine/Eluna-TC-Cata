@@ -1511,7 +1511,7 @@ void ScriptMgr::OnPlayerCreate(Player* player)
 void ScriptMgr::OnPlayerDelete(ObjectGuid guid, uint32 accountId)
 {
 #ifdef ELUNA
-    sEluna->OnDelete(GUID_LOPART(guid));
+    sEluna->OnDelete(guid.GetCounter());
 #endif
     FOREACH_SCRIPT(PlayerScript)->OnDelete(guid, accountId);
 }
