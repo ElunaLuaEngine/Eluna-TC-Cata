@@ -24,7 +24,7 @@
 class BattlegroundTPScore final : public BattlegroundScore
 {
     protected:
-        BattlegroundTPScore(uint64 playerGuid, uint32 team) : BattlegroundScore(playerGuid, team), FlagCaptures(0), FlagReturns(0) { }
+        BattlegroundTPScore(ObjectGuid playerGuid, uint32 team) : BattlegroundScore(playerGuid, team), FlagCaptures(0), FlagReturns(0) { }
 
         void UpdateScore(uint32 type, uint32 value) override
         {
@@ -48,6 +48,9 @@ class BattlegroundTPScore final : public BattlegroundScore
             content << uint32(FlagCaptures);
             content << uint32(FlagReturns);
         }
+
+        uint32 GetAttr1() const final override { return FlagCaptures; }
+        uint32 GetAttr2() const final override { return FlagReturns; }
 
         uint32 FlagCaptures;
         uint32 FlagReturns;

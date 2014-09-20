@@ -319,7 +319,7 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recvData)
                 if (!sEluna->OnChat(sender, type, lang, msg))
                     return;
 #endif
-                sender->Say(msg, lang);
+                sender->Say(msg, Language(lang));
             }
             else if (type == CHAT_MSG_EMOTE)
             {
@@ -335,7 +335,7 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recvData)
                 if (!sEluna->OnChat(sender, type, lang, msg))
                     return;
 #endif
-                sender->Yell(msg, lang);
+                sender->Yell(msg, Language(lang));
             }
             break;
         }
@@ -381,7 +381,7 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recvData)
             if (!sEluna->OnChat(GetPlayer(), type, lang, msg, receiver))
                 return;
 #endif
-            GetPlayer()->Whisper(msg, lang, receiver->GetGUID());
+            GetPlayer()->Whisper(msg, Language(lang), receiver);
             break;
         }
         case CHAT_MSG_PARTY:
@@ -786,7 +786,7 @@ void WorldSession::HandleTextEmoteOpcode(WorldPacket& recvData)
     }
 
     uint32 text_emote, emoteNum;
-    uint64 guid;
+    ObjectGuid guid;
 
     recvData >> text_emote;
     recvData >> emoteNum;
@@ -806,6 +806,10 @@ void WorldSession::HandleTextEmoteOpcode(WorldPacket& recvData)
         case EMOTE_STATE_SIT:
         case EMOTE_STATE_KNEEL:
         case EMOTE_ONESHOT_NONE:
+            break;
+        case EMOTE_STATE_DANCE:
+        case EMOTE_STATE_READ:
+            GetPlayer()->SetUInt32Value(UNIT_NPC_EMOTESTATE, emote_anim);
             break;
         default:
             // Only allow text-emotes for "dead" entities (feign death included)

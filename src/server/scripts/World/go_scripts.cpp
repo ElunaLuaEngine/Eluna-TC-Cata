@@ -36,7 +36,6 @@ go_jotunheim_cage
 go_table_theka
 go_soulwell
 go_bashir_crystalforge
-go_ethereal_teleport_pad
 go_soulwell
 go_dragonflayer_cage
 go_tadpole_cage
@@ -771,7 +770,7 @@ public:
             return false;
 
         pPrisoner->DisappearAndDie();
-        player->KilledMonsterCredit(NPC_EBON_BLADE_PRISONER_HUMAN, 0);
+        player->KilledMonsterCredit(NPC_EBON_BLADE_PRISONER_HUMAN);
         switch (pPrisoner->GetEntry())
         {
             case NPC_EBON_BLADE_PRISONER_HUMAN:
@@ -835,32 +834,6 @@ public:
             return false;
 
         player->CastSpell(player, SPELL_SUMMON_PIRATES_TREASURE_AND_TRIGGER_MOB, true);
-
-        return true;
-    }
-};
-
-/*######
-## go_ethereal_teleport_pad
-######*/
-
-enum EtherealTeleportPad
-{
-    NPC_IMAGE_WIND_TRADER               = 20518,
-    ITEM_TELEPORTER_POWER_PACK          = 28969,
-};
-
-class go_ethereal_teleport_pad : public GameObjectScript
-{
-public:
-    go_ethereal_teleport_pad() : GameObjectScript("go_ethereal_teleport_pad") { }
-
-    bool OnGossipHello(Player* player, GameObject* go) override
-    {
-        if (!player->HasItemCount(ITEM_TELEPORTER_POWER_PACK))
-            return false;
-
-        go->SummonCreature(NPC_IMAGE_WIND_TRADER, go->GetPositionX(), go->GetPositionY(), go->GetPositionZ(), go->GetAngle(player), TEMPSUMMON_TIMED_OR_DEAD_DESPAWN, 60000);
 
         return true;
     }
@@ -944,7 +917,7 @@ public:
         if (qInfo)
         {
             /// @todo prisoner should help player for a short period of time
-            player->KilledMonsterCredit(qInfo->RequiredNpcOrGo[0], 0);
+            player->KilledMonsterCredit(qInfo->RequiredNpcOrGo[0]);
             pPrisoner->DisappearAndDie();
         }
         return true;
@@ -976,7 +949,7 @@ public:
             if (pTadpole)
             {
                 pTadpole->DisappearAndDie();
-                player->KilledMonsterCredit(NPC_WINTERFIN_TADPOLE, 0);
+                player->KilledMonsterCredit(NPC_WINTERFIN_TADPOLE);
                 //FIX: Summon minion tadpole
             }
         }
@@ -1110,7 +1083,7 @@ class go_gjalerbron_cage : public GameObjectScript
             {
                 if (Creature* prisoner = go->FindNearestCreature(NPC_GJALERBRON_PRISONER, 5.0f))
                 {
-                    player->KilledMonsterCredit(NPC_GJALERBRON_PRISONER, 0);
+                    player->KilledMonsterCredit(NPC_GJALERBRON_PRISONER);
 
                     prisoner->AI()->Talk(SAY_FREE);
                     prisoner->DespawnOrUnsummon(6000);
@@ -1263,7 +1236,6 @@ void AddSC_go_scripts()
     new go_jotunheim_cage();
     new go_table_theka();
     new go_inconspicuous_landmark();
-    new go_ethereal_teleport_pad();
     new go_soulwell();
     new go_tadpole_cage();
     new go_dragonflayer_cage();

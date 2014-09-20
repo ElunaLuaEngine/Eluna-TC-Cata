@@ -403,7 +403,7 @@ void WorldSession::HandleGroupUninviteGuidOpcode(WorldPacket& recvData)
 {
     TC_LOG_DEBUG("network", "WORLD: Received CMSG_GROUP_UNINVITE_GUID");
 
-    uint64 guid;
+    ObjectGuid guid;
     std::string reason;
     recvData >> guid;
     recvData >> reason;
@@ -478,7 +478,7 @@ void WorldSession::HandleGroupUninviteOpcode(WorldPacket& recvData)
     if (!grp)
         return;
 
-    if (uint64 guid = grp->GetMemberGUID(membername))
+    if (ObjectGuid guid = grp->GetMemberGUID(membername))
     {
         Player::RemoveFromGroup(grp, guid, GROUP_REMOVEMETHOD_KICK, GetPlayer()->GetGUID());
         return;
@@ -497,7 +497,7 @@ void WorldSession::HandleGroupSetLeaderOpcode(WorldPacket& recvData)
 {
     TC_LOG_DEBUG("network", "WORLD: Received CMSG_GROUP_SET_LEADER");
 
-    uint64 guid;
+    ObjectGuid guid;
     recvData >> guid;
 
     Player* player = ObjectAccessor::FindPlayer(guid);
@@ -582,8 +582,12 @@ void WorldSession::HandleGroupSetRolesOpcode(WorldPacket& recvData)
     data.WriteByteSeq(guid1[1]);
     data << uint32(0);                  // Old Role
 
-    if (GetPlayer()->GetGroup())
-        GetPlayer()->GetGroup()->BroadcastPacket(&data, false);
+    if (Group* group = GetPlayer()->GetGroup())
+    {
+        /// @todo probably should be sent only if (oldRole != newRole)
+        group->BroadcastPacket(&data, false);
+        group->SetLfgRoles(guid2, newRole);
+    }
     else
         SendPacket(&data);
 }
@@ -616,7 +620,7 @@ void WorldSession::HandleLootMethodOpcode(WorldPacket& recvData)
     TC_LOG_DEBUG("network", "WORLD: Received CMSG_LOOT_METHOD");
 
     uint32 lootMethod;
-    uint64 lootMaster;
+    ObjectGuid lootMaster;
     uint32 lootThreshold;
     recvData >> lootMethod >> lootMaster >> lootThreshold;
 
@@ -647,7 +651,7 @@ void WorldSession::HandleLootMethodOpcode(WorldPacket& recvData)
 
 void WorldSession::HandleLootRoll(WorldPacket& recvData)
 {
-    uint64 guid;
+    ObjectGuid guid;
     uint32 itemSlot;
     uint8  rollType;
     recvData >> guid;                  // guid of the item rolled
@@ -746,10 +750,10 @@ void WorldSession::HandleRaidTargetUpdateOpcode(WorldPacket& recvData)
         if (group->isRaidGroup() && !group->IsLeader(GetPlayer()->GetGUID()) && !group->IsAssistant(GetPlayer()->GetGUID()))
             return;
 
-        uint64 guid;
+        ObjectGuid guid;
         recvData >> guid;
 
-        if (IS_PLAYER_GUID(guid))
+        if (guid.IsPlayer())
         {
             Player* target = ObjectAccessor::FindPlayer(guid);
 
@@ -790,6 +794,19 @@ void WorldSession::HandleGroupRaidConvertOpcode(WorldPacket& recvData)
         group->ConvertToGroup();
 }
 
+void WorldSession::HandleGroupRequestJoinUpdates(WorldPacket& /*recvData*/)
+{
+    Group* group = GetPlayer()->GetGroup();
+    if (!group)
+        return;
+
+    WorldPacket data(SMSG_REAL_GROUP_UPDATE, 1 + 4 + 8);
+    data << uint8(group->GetGroupType());
+    data << uint32(group->GetMembersCount() - 1);
+    data << uint64(group->GetLeaderGUID());
+    SendPacket(&data);
+}
+
 void WorldSession::HandleGroupChangeSubGroupOpcode(WorldPacket& recvData)
 {
     TC_LOG_DEBUG("network", "WORLD: Received CMSG_GROUP_CHANGE_SUB_GROUP");
@@ -807,7 +824,7 @@ void WorldSession::HandleGroupChangeSubGroupOpcode(WorldPacket& recvData)
     if (groupNr >= MAX_RAID_SUBGROUPS)
         return;
 
-    uint64 senderGuid = GetPlayer()->GetGUID();
+    ObjectGuid senderGuid = GetPlayer()->GetGUID();
     if (!group->IsLeader(senderGuid) && !group->IsAssistant(senderGuid))
         return;
 
@@ -815,7 +832,7 @@ void WorldSession::HandleGroupChangeSubGroupOpcode(WorldPacket& recvData)
         return;
 
     Player* movedPlayer = sObjectAccessor->FindPlayerByName(name);
-    uint64 guid;
+    ObjectGuid guid;
 
     if (movedPlayer)
         guid = movedPlayer->GetGUID();
@@ -849,7 +866,7 @@ void WorldSession::HandleGroupAssistantLeaderOpcode(WorldPacket& recvData)
     if (!group->IsLeader(GetPlayer()->GetGUID()))
         return;
 
-    uint64 guid;
+    ObjectGuid guid;
     bool apply;
     recvData >> guid;
     recvData >> apply;
@@ -865,13 +882,13 @@ void WorldSession::HandlePartyAssignmentOpcode(WorldPacket& recvData)
     if (!group)
         return;
 
-    uint64 senderGuid = GetPlayer()->GetGUID();
+    ObjectGuid senderGuid = GetPlayer()->GetGUID();
     if (!group->IsLeader(senderGuid) && !group->IsAssistant(senderGuid))
         return;
 
     uint8 assignment;
     bool apply;
-    uint64 guid;
+    ObjectGuid guid;
     recvData >> assignment >> apply;
     recvData >> guid;
 
@@ -954,7 +971,7 @@ void WorldSession::BuildPartyMemberStatsChangedPacket(Player* player, WorldPacke
         mask |= (GROUP_UPDATE_FLAG_PET_CUR_POWER | GROUP_UPDATE_FLAG_PET_MAX_POWER);
 
     data->Initialize(SMSG_PARTY_MEMBER_STATS, 80);          // average value
-    data->append(player->GetPackGUID());
+    *data << player->GetPackGUID();
     *data << uint32(mask);
 
     if (mask & GROUP_UPDATE_FLAG_STATUS)
@@ -1180,15 +1197,15 @@ void WorldSession::BuildPartyMemberStatsChangedPacket(Player* player, WorldPacke
 void WorldSession::HandleRequestPartyMemberStatsOpcode(WorldPacket& recvData)
 {
     TC_LOG_DEBUG("network", "WORLD: Received CMSG_REQUEST_PARTY_MEMBER_STATS");
-    uint64 guid;
-    recvData >> guid;
+    ObjectGuid Guid;
+    recvData >> Guid;
 
-    Player* player = HashMapHolder<Player>::Find(guid);
+    Player* player = HashMapHolder<Player>::Find(Guid);
     if (!player)
     {
         WorldPacket data(SMSG_PARTY_MEMBER_STATS_FULL, 3+4+2);
         data << uint8(0);                                   // only for SMSG_PARTY_MEMBER_STATS_FULL, probably arena/bg related
-        data.appendPackGUID(guid);
+        data << Guid.WriteAsPacked();
         data << uint32(GROUP_UPDATE_FLAG_STATUS);
         data << uint16(MEMBER_STATUS_OFFLINE);
         SendPacket(&data);
@@ -1201,7 +1218,7 @@ void WorldSession::HandleRequestPartyMemberStatsOpcode(WorldPacket& recvData)
 
     WorldPacket data(SMSG_PARTY_MEMBER_STATS_FULL, 4+2+2+2+1+2*6+8+1+8);
     data << uint8(0);                                       // only for SMSG_PARTY_MEMBER_STATS_FULL, probably arena/bg related
-    data.append(player->GetPackGUID());
+    data << player->GetPackGUID();
 
     uint32 updateFlags = GROUP_UPDATE_FLAG_STATUS | GROUP_UPDATE_FLAG_CUR_HP | GROUP_UPDATE_FLAG_MAX_HP
                       | GROUP_UPDATE_FLAG_CUR_POWER | GROUP_UPDATE_FLAG_MAX_POWER | GROUP_UPDATE_FLAG_LEVEL
@@ -1378,4 +1395,41 @@ void WorldSession::HandleOptOutOfLootOpcode(WorldPacket& recvData)
     }
 
     GetPlayer()->SetPassOnGroupLoot(passOnLoot != 0);
+}
+
+void WorldSession::HandleRolePollBeginOpcode(WorldPacket& recvData)
+{
+    TC_LOG_DEBUG("network", "WORLD: Received CMSG_ROLE_POLL_BEGIN");
+
+    Group* group = GetPlayer()->GetGroup();
+    if (!group)
+        return;
+
+    if (recvData.empty())
+    {
+        if (!group->IsLeader(GetPlayer()->GetGUID()) && !group->IsAssistant(GetPlayer()->GetGUID()))
+            return;
+
+        ObjectGuid guid = GetPlayer()->GetGUID();
+
+        WorldPacket data(SMSG_ROLE_POLL_BEGIN, 8);
+        data.WriteBit(guid[1]);
+        data.WriteBit(guid[5]);
+        data.WriteBit(guid[7]);
+        data.WriteBit(guid[3]);
+        data.WriteBit(guid[2]);
+        data.WriteBit(guid[4]);
+        data.WriteBit(guid[0]);
+        data.WriteBit(guid[6]);
+        data.WriteByteSeq(guid[4]);
+        data.WriteByteSeq(guid[7]);
+        data.WriteByteSeq(guid[0]);
+        data.WriteByteSeq(guid[5]);
+        data.WriteByteSeq(guid[1]);
+        data.WriteByteSeq(guid[6]);
+        data.WriteByteSeq(guid[2]);
+        data.WriteByteSeq(guid[3]);
+
+        GetPlayer()->GetGroup()->BroadcastPacket(&data, true);
+    }
 }

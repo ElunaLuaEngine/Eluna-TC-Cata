@@ -50,6 +50,7 @@
 
 #if PLATFORM == PLATFORM_WINDOWS
 #  define TRINITY_PATH_MAX MAX_PATH
+#  define _USE_MATH_DEFINES
 #  ifndef DECLSPEC_NORETURN
 #    define DECLSPEC_NORETURN __declspec(noreturn)
 #  endif //DECLSPEC_NORETURN
@@ -86,6 +87,8 @@
 
 #define SI64FMTD "%" PRId64
 #define SI64LIT(N) INT64_C(N)
+
+#define SZFMTD "%" PRIuPTR
 
 typedef int64_t int64;
 typedef int32_t int32;

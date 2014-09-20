@@ -60,9 +60,23 @@ public:
 
     struct npc_draenei_survivorAI : public ScriptedAI
     {
-        npc_draenei_survivorAI(Creature* creature) : ScriptedAI(creature) { }
+        npc_draenei_survivorAI(Creature* creature) : ScriptedAI(creature)
+        {
+            Initialize();
+        }
 
-        uint64 pCaster;
+        void Initialize()
+        {
+            pCaster.Clear();
+
+            SayThanksTimer = 0;
+            RunAwayTimer = 0;
+            SayHelpTimer = 10000;
+
+            CanSayHelp = true;
+        }
+
+        ObjectGuid pCaster;
 
         uint32 SayThanksTimer;
         uint32 RunAwayTimer;
@@ -72,13 +86,7 @@ public:
 
         void Reset() override
         {
-            pCaster = 0;
-
-            SayThanksTimer = 0;
-            RunAwayTimer = 0;
-            SayHelpTimer = 10000;
-
-            CanSayHelp = true;
+            Initialize();
 
             DoCast(me, SPELL_IRRIDATION, true);
 
@@ -192,22 +200,28 @@ public:
     {
         npc_engineer_spark_overgrindAI(Creature* creature) : ScriptedAI(creature)
         {
+            Initialize();
             NormFaction = creature->getFaction();
             NpcFlags = creature->GetUInt32Value(UNIT_NPC_FLAGS);
-
-            if (creature->GetAreaId() == AREA_COVE || creature->GetAreaId() == AREA_ISLE)
-                IsTreeEvent = true;
         }
 
-        void Reset() override
+        void Initialize()
         {
             DynamiteTimer = 8000;
             EmoteTimer = urand(120000, 150000);
 
+            if (me->GetAreaId() == AREA_COVE || me->GetAreaId() == AREA_ISLE)
+                IsTreeEvent = true;
+            else
+                IsTreeEvent = false;
+        }
+
+        void Reset() override
+        {
+            Initialize();
+
             me->setFaction(NormFaction);
             me->SetUInt32Value(UNIT_NPC_FLAGS, NpcFlags);
-
-            IsTreeEvent = false;
         }
 
         void EnterCombat(Unit* who) override
@@ -409,9 +423,20 @@ public:
 
     struct npc_geezleAI : public ScriptedAI
     {
-        npc_geezleAI(Creature* creature) : ScriptedAI(creature) { }
+        npc_geezleAI(Creature* creature) : ScriptedAI(creature)
+        {
+            Initialize();
+        }
 
-        uint64 SparkGUID;
+        void Initialize()
+        {
+            SparkGUID.Clear();
+            Step = 0;
+            EventStarted = false;
+            SayTimer = 0;
+        }
+
+        ObjectGuid SparkGUID;
 
         uint8 Step;
         uint32 SayTimer;
@@ -420,8 +445,7 @@ public:
 
         void Reset() override
         {
-            SparkGUID = 0;
-            Step = 0;
+            Initialize();
             StartEvent();
         }
 
@@ -503,7 +527,7 @@ public:
 
             for (std::list<Player*>::const_iterator itr = players.begin(); itr != players.end(); ++itr)
                 if ((*itr)->GetQuestStatus(QUEST_TREES_COMPANY) == QUEST_STATUS_INCOMPLETE && (*itr)->HasAura(SPELL_TREE_DISGUISE))
-                    (*itr)->KilledMonsterCredit(NPC_SPARK, 0);
+                    (*itr)->KilledMonsterCredit(NPC_SPARK);
         }
 
         void DespawnNagaFlag(bool despawn)
@@ -581,15 +605,23 @@ public:
 
     struct npc_death_ravagerAI : public ScriptedAI
     {
-        npc_death_ravagerAI(Creature* creature) : ScriptedAI(creature){ }
+        npc_death_ravagerAI(Creature* creature) : ScriptedAI(creature)
+        {
+            Initialize();
+        }
+
+        void Initialize()
+        {
+            RendTimer = 30000;
+            EnragingBiteTimer = 20000;
+        }
 
         uint32 RendTimer;
         uint32 EnragingBiteTimer;
 
         void Reset() override
         {
-            RendTimer = 30000;
-            EnragingBiteTimer = 20000;
+            Initialize();
 
             me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
             me->SetReactState(REACT_PASSIVE);
@@ -647,7 +679,16 @@ class npc_stillpine_capitive : public CreatureScript
 
         struct npc_stillpine_capitiveAI : public ScriptedAI
         {
-            npc_stillpine_capitiveAI(Creature* creature) : ScriptedAI(creature) { }
+            npc_stillpine_capitiveAI(Creature* creature) : ScriptedAI(creature)
+            {
+                Initialize();
+            }
+
+            void Initialize()
+            {
+                _playerGUID.Clear();
+                _movementComplete = false;
+            }
 
             void Reset() override
             {
@@ -657,8 +698,7 @@ class npc_stillpine_capitive : public CreatureScript
                     cage->SetGoState(GO_STATE_READY);
                 }
                 _events.Reset();
-                _player = NULL;
-                _movementComplete = false;
+                Initialize();
             }
 
             void StartMoving(Player* owner)
@@ -666,7 +706,7 @@ class npc_stillpine_capitive : public CreatureScript
                 if (owner)
                 {
                     Talk(CAPITIVE_SAY, owner);
-                    _player = owner;
+                    _playerGUID = owner->GetGUID();
                 }
                 Position pos = me->GetNearPosition(3.0f, 0.0f);
                 me->GetMotionMaster()->MovePoint(POINT_INIT, pos);
@@ -677,7 +717,7 @@ class npc_stillpine_capitive : public CreatureScript
                 if (type != POINT_MOTION_TYPE || id != POINT_INIT)
                     return;
 
-                if (_player)
+                if (Player* _player = ObjectAccessor::GetPlayer(*me, _playerGUID))
                     _player->KilledMonsterCredit(me->GetEntry(), me->GetGUID());
 
                 _movementComplete = true;
@@ -696,7 +736,7 @@ class npc_stillpine_capitive : public CreatureScript
             }
 
         private:
-            Player* _player;
+            ObjectGuid _playerGUID;
             EventMap _events;
             bool _movementComplete;
         };

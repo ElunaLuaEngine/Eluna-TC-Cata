@@ -36,12 +36,9 @@ class instance_baradin_hold: public InstanceMapScript
         {
             instance_baradin_hold_InstanceMapScript(InstanceMap* map) : InstanceScript(map)
             {
+                SetHeaders(DataHeader);
                 SetBossNumber(EncounterCount);
                 LoadDoorData(doorData);
-
-                ArgalothGUID = 0;
-                OccutharGUID = 0;
-                AlizabalGUID = 0;
             }
 
             void OnCreatureCreate(Creature* creature) override
@@ -72,7 +69,7 @@ class instance_baradin_hold: public InstanceMapScript
                 }
             }
 
-            uint64 GetData64(uint32 data) const override
+            ObjectGuid GetGuidData(uint32 data) const override
             {
                 switch (data)
                 {
@@ -86,7 +83,7 @@ class instance_baradin_hold: public InstanceMapScript
                         break;
                 }
 
-                return 0;
+                return ObjectGuid::Empty;
             }
 
             void OnGameObjectRemove(GameObject* go) override
@@ -101,55 +98,10 @@ class instance_baradin_hold: public InstanceMapScript
                 }
             }
 
-            std::string GetSaveData() override
-            {
-                OUT_SAVE_INST_DATA;
-
-                std::ostringstream saveStream;
-                saveStream << "B H " << GetBossSaveData();
-
-                OUT_SAVE_INST_DATA_COMPLETE;
-                return saveStream.str();
-            }
-
-            void Load(const char* in) override
-            {
-                if (!in)
-                {
-                    OUT_LOAD_INST_DATA_FAIL;
-                    return;
-                }
-
-                OUT_LOAD_INST_DATA(in);
-
-                char dataHead1, dataHead2;
-
-                std::istringstream loadStream(in);
-                loadStream >> dataHead1 >> dataHead2;
-
-                if (dataHead1 == 'B' && dataHead2 == 'H')
-                {
-                    for (uint8 i = 0; i < EncounterCount; ++i)
-                    {
-                        uint32 tmpState;
-                        loadStream >> tmpState;
-                        if (tmpState == IN_PROGRESS || tmpState > SPECIAL)
-                            tmpState = NOT_STARTED;
-
-                        SetBossState(i, EncounterState(tmpState));
-                    }
-
-                }
-                else
-                    OUT_LOAD_INST_DATA_FAIL;
-
-                OUT_LOAD_INST_DATA_COMPLETE;
-            }
-
         protected:
-            uint64 ArgalothGUID;
-            uint64 OccutharGUID;
-            uint64 AlizabalGUID;
+            ObjectGuid ArgalothGUID;
+            ObjectGuid OccutharGUID;
+            ObjectGuid AlizabalGUID;
         };
 
         InstanceScript* GetInstanceScript(InstanceMap* map) const

@@ -39,18 +39,9 @@ class instance_zulgurub : public InstanceMapScript
         {
             instance_zulgurub_InstanceMapScript(Map* map) : InstanceScript(map)
             {
+                SetHeaders(DataHeader);
                 SetBossNumber(EncounterCount);
                 LoadDoorData(doorData);
-                venoxisGUID         = 0;
-                mandokirGUID        = 0;
-                kilnaraGUID         = 0;
-                zanzilGUID          = 0;
-                jindoGUID           = 0;
-                hazzarahGUID        = 0;
-                renatakiGUID        = 0;
-                wushoolayGUID       = 0;
-                grilekGUID          = 0;
-                jindoTiggerGUID     = 0;
             }
 
             void OnCreatureCreate(Creature* creature) override
@@ -166,7 +157,7 @@ class instance_zulgurub : public InstanceMapScript
             }
             */
 
-            uint64 GetData64(uint32 type) const override
+            ObjectGuid GetGuidData(uint32 type) const override
             {
                 switch (type)
                 {
@@ -194,64 +185,20 @@ class instance_zulgurub : public InstanceMapScript
                         break;
                 }
 
-                return 0;
-            }
-
-            std::string GetSaveData() override
-            {
-                OUT_SAVE_INST_DATA;
-
-                std::ostringstream saveStream;
-                saveStream << "Z G " << GetBossSaveData();
-
-                OUT_SAVE_INST_DATA_COMPLETE;
-                return saveStream.str();
-            }
-
-            void Load(char const* str) override
-            {
-                if (!str)
-                {
-                    OUT_LOAD_INST_DATA_FAIL;
-                    return;
-                }
-
-                OUT_LOAD_INST_DATA(str);
-
-                char dataHead1, dataHead2;
-
-                std::istringstream loadStream(str);
-                loadStream >> dataHead1 >> dataHead2;
-
-                if (dataHead1 == 'Z' && dataHead2 == 'G')
-                {
-                    for (uint8 i = 0; i < EncounterCount; ++i)
-                    {
-                        uint32 tmpState;
-                        loadStream >> tmpState;
-                        if (tmpState == IN_PROGRESS || tmpState > SPECIAL)
-                            tmpState = NOT_STARTED;
-
-                        SetBossState(i, EncounterState(tmpState));
-                    }
-                }
-                else
-                    OUT_LOAD_INST_DATA_FAIL;
-
-                OUT_LOAD_INST_DATA_COMPLETE;
+                return ObjectGuid::Empty;
             }
 
         protected:
-             uint64 venoxisGUID;
-             uint64 mandokirGUID;
-             uint64 kilnaraGUID;
-             uint64 zanzilGUID;
-             uint64 jindoGUID;
-             uint64 hazzarahGUID;
-             uint64 renatakiGUID;
-             uint64 wushoolayGUID;
-             uint64 grilekGUID;
-             uint64 jindoTiggerGUID;
+            ObjectGuid venoxisGUID;
+            ObjectGuid mandokirGUID;
+            ObjectGuid kilnaraGUID;
+            ObjectGuid zanzilGUID;
+            ObjectGuid jindoGUID;
+            ObjectGuid hazzarahGUID;
+            ObjectGuid renatakiGUID;
+            ObjectGuid wushoolayGUID;
+            ObjectGuid grilekGUID;
+            ObjectGuid jindoTiggerGUID;
         };
 
         InstanceScript* GetInstanceScript(InstanceMap* map) const override

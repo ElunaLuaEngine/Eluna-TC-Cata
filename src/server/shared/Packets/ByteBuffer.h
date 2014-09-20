@@ -31,7 +31,8 @@
 #include <vector>
 #include <cstring>
 #include <time.h>
-#include <math.h>
+#include <cmath>
+#include <type_traits>
 #include <boost/asio/buffer.hpp>
 
 class MessageBuffer;
@@ -70,15 +71,16 @@ public:
 class ByteBuffer
 {
     public:
-        const static size_t DEFAULT_SIZE = 0x1000;
+        static size_t const DEFAULT_SIZE = 0x1000;
+        static uint8 const InitialBitPos = 8;
 
         // constructor
-        ByteBuffer() : _rpos(0), _wpos(0), _bitpos(8), _curbitval(0)
+        ByteBuffer() : _rpos(0), _wpos(0), _bitpos(InitialBitPos), _curbitval(0)
         {
             _storage.reserve(DEFAULT_SIZE);
         }
 
-        ByteBuffer(size_t reserve) : _rpos(0), _wpos(0), _bitpos(8), _curbitval(0)
+        ByteBuffer(size_t reserve) : _rpos(0), _wpos(0), _bitpos(InitialBitPos), _curbitval(0)
         {
             _storage.reserve(reserve);
         }
@@ -115,6 +117,7 @@ class ByteBuffer
 
         template <typename T> void append(T value)
         {
+            static_assert(std::is_fundamental<T>::value, "append(compound)");
             FlushBits();
             EndianConvert(value);
             append((uint8 *)&value, sizeof(value));
@@ -189,6 +192,7 @@ class ByteBuffer
 
         template <typename T> void put(size_t pos, T value)
         {
+            static_assert(std::is_fundamental<T>::value, "append(compound)");
             EndianConvert(value);
             put(pos, (uint8 *)&value, sizeof(value));
         }

@@ -127,6 +127,7 @@ struct CreatureTemplate
     uint32  InhabitType;
     float   HoverHeight;
     float   ModHealth;
+    float   ModHealthExtra;
     float   ModMana;
     float   ModManaExtra;                                   // Added in 4.x, this value is usually 2 for a small group of creatures with double mana
     float   ModArmor;
@@ -194,7 +195,7 @@ struct CreatureBaseStats
 
     uint32 GenerateHealth(CreatureTemplate const* info) const
     {
-        return uint32(ceil(BaseHealth[info->expansion] * info->ModHealth));
+        return uint32(ceil(BaseHealth[info->expansion] * info->ModHealth * info->ModHealthExtra));
     }
 
     uint32 GenerateMana(CreatureTemplate const* info) const
@@ -551,11 +552,11 @@ class Creature : public Unit, public GridObject<Creature>, public MapObject
         void StartPickPocketRefillTimer();
         void ResetPickPocketRefillTimer() { _pickpocketLootRestore = 0; }
         bool CanGeneratePickPocketLoot() const { return _pickpocketLootRestore <= time(NULL); }
-        void SetSkinner(uint64 guid) { _skinner = guid; }
-        uint64 GetSkinner() const { return _skinner; } // Returns the player who skinned this creature
+        void SetSkinner(ObjectGuid guid) { _skinner = guid; }
+        ObjectGuid GetSkinner() const { return _skinner; } // Returns the player who skinned this creature
         Player* GetLootRecipient() const;
         Group* GetLootRecipientGroup() const;
-        bool hasLootRecipient() const { return m_lootRecipient || m_lootRecipientGroup; }
+        bool hasLootRecipient() const { return !m_lootRecipient.IsEmpty() || m_lootRecipientGroup; }
         bool isTappedBy(Player const* player) const;                          // return true if the creature is tapped by the player or a member of his party.
 
         void SetLootRecipient (Unit* unit);
@@ -673,7 +674,7 @@ class Creature : public Unit, public GridObject<Creature>, public MapObject
         bool m_isTempWorldObject; //true when possessed
 
         // Handling caster facing during spellcast
-        void SetTarget(uint64 guid) override;
+        void SetTarget(ObjectGuid guid) override;
         void FocusTarget(Spell const* focusSpell, WorldObject const* target);
         void ReleaseFocus(Spell const* focusSpell);
 
@@ -686,9 +687,9 @@ class Creature : public Unit, public GridObject<Creature>, public MapObject
 
         static float _GetHealthMod(int32 Rank);
 
-        uint64 m_lootRecipient;
+        ObjectGuid m_lootRecipient;
         uint32 m_lootRecipientGroup;
-        uint64 _skinner;
+        ObjectGuid _skinner;
 
         /// Timers
         time_t _pickpocketLootRestore;
@@ -745,15 +746,15 @@ class Creature : public Unit, public GridObject<Creature>, public MapObject
 class AssistDelayEvent : public BasicEvent
 {
     public:
-        AssistDelayEvent(uint64 victim, Unit& owner) : BasicEvent(), m_victim(victim), m_owner(owner) { }
+        AssistDelayEvent(ObjectGuid victim, Unit& owner) : BasicEvent(), m_victim(victim), m_owner(owner) { }
 
         bool Execute(uint64 e_time, uint32 p_time) override;
-        void AddAssistant(uint64 guid) { m_assistants.push_back(guid); }
+        void AddAssistant(ObjectGuid guid) { m_assistants.push_back(guid); }
     private:
         AssistDelayEvent();
 
-        uint64            m_victim;
-        std::list<uint64> m_assistants;
+        ObjectGuid        m_victim;
+        GuidList          m_assistants;
         Unit&             m_owner;
 };
 

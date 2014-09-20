@@ -24,7 +24,7 @@
 class BattlegroundBFGScore final : public BattlegroundScore
 {
     protected:
-        BattlegroundBFGScore(uint64 playerGuid, uint32 team) : BattlegroundScore(playerGuid, team), BasesAssaulted(0), BasesDefended(0) { }
+        BattlegroundBFGScore(ObjectGuid playerGuid, uint32 team) : BattlegroundScore(playerGuid, team), BasesAssaulted(0), BasesDefended(0) { }
 
         void UpdateScore(uint32 type, uint32 value) override
         {
@@ -48,6 +48,9 @@ class BattlegroundBFGScore final : public BattlegroundScore
             content << uint32(BasesAssaulted);
             content << uint32(BasesDefended);
         }
+
+        uint32 GetAttr1() const final override { return BasesAssaulted; }
+        uint32 GetAttr2() const final override { return BasesDefended; }
 
         uint32 BasesAssaulted;
         uint32 BasesDefended;
