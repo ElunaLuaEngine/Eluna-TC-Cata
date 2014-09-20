@@ -34,6 +34,7 @@
 #include "WorldPacket.h"
 #ifdef ELUNA
 #include "LuaEngine.h"
+#include "ElunaUtility.h"
 #endif
 #include "WorldSession.h"
 
@@ -1511,7 +1512,7 @@ void ScriptMgr::OnPlayerCreate(Player* player)
 void ScriptMgr::OnPlayerDelete(ObjectGuid guid, uint32 accountId)
 {
 #ifdef ELUNA
-    sEluna->OnDelete(guid.GetCounter());
+    sEluna->OnDelete(GUID_LOPART(guid));
 #endif
     FOREACH_SCRIPT(PlayerScript)->OnDelete(guid, accountId);
 }
