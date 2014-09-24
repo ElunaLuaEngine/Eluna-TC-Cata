@@ -1005,7 +1005,7 @@ template<class T>
 void AchievementMgr<T>::CheckAllAchievementCriteria(Player* referencePlayer)
 {
     // suppress sending packets
-    for (uint32 i=0; i<ACHIEVEMENT_CRITERIA_TYPE_TOTAL; ++i)
+    for (uint32 i = 0; i < ACHIEVEMENT_CRITERIA_TYPE_TOTAL; ++i)
         UpdateAchievementCriteria(AchievementCriteriaTypes(i), 0, 0, 0, NULL, referencePlayer);
 }
 
@@ -1395,6 +1395,14 @@ void AchievementMgr<T>::UpdateAchievementCriteria(AchievementCriteriaTypes type,
     }
 }
 
+// Only player personal achievements require instance id to check realm firsts
+// Guild restrictions are handled with additionalConditionType/additionalConditionValue
+template<class T>
+static uint32 GetInstanceId(T* /*object*/) { return 0xFFFFFFFF; }
+
+template<>
+uint32 GetInstanceId(Player* player) { return player->GetInstanceId(); }
+
 template<class T>
 bool AchievementMgr<T>::IsCompletedCriteria(AchievementCriteriaEntry const* achievementCriteria, AchievementEntry const* achievement)
 {
@@ -1408,7 +1416,7 @@ bool AchievementMgr<T>::IsCompletedCriteria(AchievementCriteriaEntry const* achi
     if (achievement->flags & (ACHIEVEMENT_FLAG_REALM_FIRST_REACH | ACHIEVEMENT_FLAG_REALM_FIRST_KILL))
     {
         // someone on this realm has already completed that achievement
-        if (sAchievementMgr->IsRealmCompleted(achievement))
+        if (sAchievementMgr->IsRealmCompleted(achievement, GetInstanceId(GetOwner())))
             return false;
     }
 
@@ -1822,10 +1830,7 @@ void AchievementMgr<Player>::CompletedAchievement(AchievementEntry const* achiev
     ca.date = time(NULL);
     ca.changed = true;
 
-    // don't insert for ACHIEVEMENT_FLAG_REALM_FIRST_KILL since otherwise only the first group member would reach that achievement
-    /// @todo where do set this instead?
-    if (!(achievement->flags & ACHIEVEMENT_FLAG_REALM_FIRST_KILL))
-        sAchievementMgr->SetRealmCompleted(achievement);
+    sAchievementMgr->SetRealmCompleted(achievement, GetOwner()->GetInstanceId());
 
     _achievementPoints += achievement->points;
 
@@ -1918,7 +1923,7 @@ void AchievementMgr<Guild>::CompletedAchievement(AchievementEntry const* achieve
                         ca.guids.insert(groupMember->GetGUID());
     }
 
-    sAchievementMgr->SetRealmCompleted(achievement);
+    sAchievementMgr->SetRealmCompleted(achievement, referencePlayer->GetInstanceId());
 
     _achievementPoints += achievement->points;
 
@@ -3183,7 +3188,7 @@ void AchievementGlobalMgr::LoadCompletedAchievements()
             continue;
         }
         else if (achievement->flags & (ACHIEVEMENT_FLAG_REALM_FIRST_REACH | ACHIEVEMENT_FLAG_REALM_FIRST_KILL))
-            m_allCompletedAchievements.insert(achievementId);
+            m_allCompletedAchievements[achievementId] = uint32(0xFFFFFFFF);
     }
     while (result->NextRow());
 
@@ -3359,4 +3364,11 @@ AchievementEntry const* AchievementGlobalMgr::GetAchievement(uint32 achievementI
 AchievementCriteriaEntry const* AchievementGlobalMgr::GetAchievementCriteria(uint32 criteriaId) const
 {
     return sAchievementCriteriaStore.LookupEntry(criteriaId);
+}
+
+void AchievementGlobalMgr::OnInstanceDestroyed(uint32 instanceId)
+{
+    for (auto& realmCompletion : m_allCompletedAchievements)
+        if (realmCompletion.second == instanceId)
+            realmCompletion.second = uint32(0xFFFFFFFF);
 }
