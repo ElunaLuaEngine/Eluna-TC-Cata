@@ -50,6 +50,7 @@
 #ifdef ELUNA
 #include "LuaEngine.h"
 #endif
+#include "BattlenetServerManager.h"
 
 namespace {
 
@@ -59,8 +60,7 @@ std::string const DefaultPlayerName = "<none>";
 
 bool MapSessionFilter::Process(WorldPacket* packet)
 {
-    Opcodes opcode = DropHighBytes(packet->GetOpcode());
-    OpcodeHandler const* opHandle = opcodeTable[opcode];
+    OpcodeHandler const* opHandle = opcodeTable[packet->GetOpcode()];
 
     //let's check if our opcode can be really processed in Map::Update()
     if (opHandle->ProcessingPlace == PROCESS_INPLACE)
@@ -82,8 +82,7 @@ bool MapSessionFilter::Process(WorldPacket* packet)
 //OR packet handler is not thread-safe!
 bool WorldSessionFilter::Process(WorldPacket* packet)
 {
-    Opcodes opcode = DropHighBytes(packet->GetOpcode());
-    OpcodeHandler const* opHandle = opcodeTable[opcode];
+    OpcodeHandler const* opHandle = opcodeTable[packet->GetOpcode()];
     //check if packet handler is supposed to be safe
     if (opHandle->ProcessingPlace == PROCESS_INPLACE)
         return true;
@@ -608,6 +607,9 @@ void WorldSession::LogoutPlayer(bool save)
         _player->CleanupsBeforeDelete();
         TC_LOG_INFO("entities.player.character", "Account: %d (IP: %s) Logout Character:[%s] (GUID: %u) Level: %d",
             GetAccountId(), GetRemoteAddress().c_str(), _player->GetName().c_str(), _player->GetGUIDLow(), _player->getLevel());
+
+        sBattlenetServer.SendChangeToonOnlineState(GetBattlenetAccountId(), GetAccountId(), _player->GetGUID(), _player->GetName(), false);
+
         if (Map* _map = _player->FindMap())
             _map->RemovePlayerFromMap(_player, true);
 
@@ -1169,11 +1171,11 @@ void WorldSession::LoadPermissions()
     AccountMgr::GetName(id, name);
     uint8 secLevel = GetSecurity();
 
-    _RBACData = new rbac::RBACData(id, name, realmID, secLevel);
+    _RBACData = new rbac::RBACData(id, name, realmHandle.Index, secLevel);
     _RBACData->LoadFromDB();
 
     TC_LOG_DEBUG("rbac", "WorldSession::LoadPermissions [AccountId: %u, Name: %s, realmId: %d, secLevel: %u]",
-                   id, name.c_str(), realmID, secLevel);
+                   id, name.c_str(), realmHandle.Index, secLevel);
 }
 
 rbac::RBACData* WorldSession::GetRBACData()
@@ -1188,7 +1190,7 @@ bool WorldSession::HasPermission(uint32 permission)
 
     bool hasPermission = _RBACData->HasPermission(permission);
     TC_LOG_DEBUG("rbac", "WorldSession::HasPermission [AccountId: %u, Name: %s, realmId: %d]",
-                   _RBACData->GetId(), _RBACData->GetName().c_str(), realmID);
+                   _RBACData->GetId(), _RBACData->GetName().c_str(), realmHandle.Index);
 
     return hasPermission;
 }
@@ -1196,7 +1198,7 @@ bool WorldSession::HasPermission(uint32 permission)
 void WorldSession::InvalidateRBACData()
 {
     TC_LOG_DEBUG("rbac", "WorldSession::Invalidaterbac::RBACData [AccountId: %u, Name: %s, realmId: %d]",
-                   _RBACData->GetId(), _RBACData->GetName().c_str(), realmID);
+                   _RBACData->GetId(), _RBACData->GetName().c_str(), realmHandle.Index);
     delete _RBACData;
     _RBACData = NULL;
 }

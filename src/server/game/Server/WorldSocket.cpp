@@ -165,7 +165,7 @@ bool WorldSocket::ReadDataHandler()
     {
         ClientPktHeader* header = reinterpret_cast<ClientPktHeader*>(_headerBuffer.GetReadPointer());
 
-        Opcodes opcode = PacketFilter::DropHighBytes(Opcodes(header->cmd));
+        Opcodes opcode = Opcodes(header->cmd);
 
         std::string opcodeName = GetOpcodeNameForLogging(opcode);
 
@@ -225,6 +225,20 @@ bool WorldSocket::ReadDataHandler()
                     TC_LOG_ERROR("network.opcode", "ProcessIncoming: Client not authed opcode = %u", uint32(opcode));
                     CloseSocket();
                     return false;
+                }
+
+                // prevent invalid memory access/crash with custom opcodes
+                if (opcode >= NUM_OPCODE_HANDLERS)
+                {
+                    CloseSocket();
+                    return false;
+                }
+
+                OpcodeHandler const* handler = opcodeTable[opcode];
+                if (!handler)
+                {
+                    TC_LOG_ERROR("network.opcode", "No defined handler for opcode %s sent by %s", GetOpcodeNameForLogging(packet.GetOpcode()).c_str(), _worldSession->GetPlayerInfo().c_str());
+                    return true;
                 }
 
                 // Our Idle timer will reset on any non PING opcodes.
@@ -406,7 +420,7 @@ void WorldSocket::HandleAuthSession(WorldPacket& recvPacket)
         return;
     }
 
-    if (realmIndex != realmID)
+    if (realmIndex != realmHandle.Index)
     {
         SendAuthResponseError(REALM_LIST_REALM_NOT_FOUND);
         TC_LOG_ERROR("network", "WorldSocket::HandleAuthSession: Sent Auth Response (bad realm).");
@@ -485,7 +499,7 @@ void WorldSocket::HandleAuthSession(WorldPacket& recvPacket)
     stmt = LoginDatabase.GetPreparedStatement(LOGIN_GET_GMLEVEL_BY_REALMID);
 
     stmt->setUInt32(0, id);
-    stmt->setInt32(1, int32(realmID));
+    stmt->setInt32(1, int32(realmHandle.Index));
 
     result = LoginDatabase.Query(stmt);
 
