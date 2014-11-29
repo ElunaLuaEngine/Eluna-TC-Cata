@@ -35,9 +35,6 @@
 #include "ScriptMgr.h"
 #include "SpellScript.h"
 #include "Vehicle.h"
-#ifdef ELUNA
-#include "LuaEngine.h"
-#endif
 #include "Config.h"
 
 AuraApplication::AuraApplication(Unit* target, Unit* caster, Aura* aura, uint8 effMask):
@@ -383,10 +380,6 @@ void Aura::_InitEffects(uint8 effMask, Unit* caster, int32 *baseAmount)
 
 Aura::~Aura()
 {
-#ifdef ELUNA
-    Eluna::RemoveRef(this);
-#endif
-
     // unload scripts
     while (!m_loadedScripts.empty())
     {

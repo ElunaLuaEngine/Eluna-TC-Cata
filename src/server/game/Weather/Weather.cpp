@@ -30,9 +30,6 @@
 #include "ScriptMgr.h"
 #include "Opcodes.h"
 #include "WorldSession.h"
-#ifdef ELUNA
-#include "LuaEngine.h"
-#endif
 
 /// Create the Weather object
 Weather::Weather(uint32 zone, WeatherData const* weatherChances)
@@ -47,9 +44,6 @@ Weather::Weather(uint32 zone, WeatherData const* weatherChances)
 
 Weather::~Weather()
 {
-#ifdef ELUNA
-    Eluna::RemoveRef(this);
-#endif
 };
 
 /// Launch a weather update
