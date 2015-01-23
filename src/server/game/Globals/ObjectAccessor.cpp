@@ -413,6 +413,8 @@ Corpse* ObjectAccessor::ConvertCorpseForPlayer(ObjectGuid player_guid, bool insi
                 bones->SetUInt32Value(CORPSE_FIELD_ITEM + i, 0);
         }
 
+        bones->CopyPhaseFrom(corpse);
+
         // add bones in grid store if grid loaded where corpse placed
         map->AddToMap(bones);
     }
