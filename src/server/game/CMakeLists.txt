@@ -229,8 +229,6 @@ target_link_libraries(game
 )
 endif()
 
-add_dependencies(game revision.h)
-
 # Generate precompiled header
 if (USE_COREPCH)
   add_cxx_pch(game ${game_STAT_PCH_HDR} ${game_STAT_PCH_SRC})

@@ -117,10 +117,12 @@ void WorldSession::HandleGossipSelectOptionOpcode(WorldPacket& recvData)
     // Prevent cheating on C++ scripted menus
     if (_player->PlayerTalkClass->GetGossipMenu().GetSenderGUID() != guid)
         return;
-
+    
+#ifdef ELUNA
+    Item* item = NULL;
+#endif
     Creature* unit = NULL;
     GameObject* go = NULL;
-    Item* item = NULL;
     if (guid.IsCreatureOrVehicle())
     {
         unit = GetPlayer()->GetNPCIfCanInteractWith(guid, UNIT_NPC_FLAG_NONE);
@@ -190,12 +192,10 @@ void WorldSession::HandleGossipSelectOptionOpcode(WorldPacket& recvData)
         else if (item)
         {
             sEluna->HandleGossipSelectOption(GetPlayer(), item, GetPlayer()->PlayerTalkClass->GetGossipOptionSender(gossipListId), GetPlayer()->PlayerTalkClass->GetGossipOptionAction(gossipListId), code);
-            return;
         }
         else if (_player->GetGUID() == guid && menuId == _player->PlayerTalkClass->GetGossipMenu().GetMenuId())
         {
             sEluna->HandleGossipSelectOption(GetPlayer(), menuId, GetPlayer()->PlayerTalkClass->GetGossipOptionSender(gossipListId), GetPlayer()->PlayerTalkClass->GetGossipOptionAction(gossipListId), code);
-            return;
         }
 #endif
         else
@@ -217,12 +217,10 @@ void WorldSession::HandleGossipSelectOptionOpcode(WorldPacket& recvData)
         else if (_player->GetGUID() == guid && menuId == _player->PlayerTalkClass->GetGossipMenu().GetMenuId())
         {
             sEluna->HandleGossipSelectOption(GetPlayer(), menuId, GetPlayer()->PlayerTalkClass->GetGossipOptionSender(gossipListId), GetPlayer()->PlayerTalkClass->GetGossipOptionAction(gossipListId), code);
-            return;
         }
         else if (item)
         {
             sEluna->HandleGossipSelectOption(GetPlayer(), item, GetPlayer()->PlayerTalkClass->GetGossipOptionSender(gossipListId), GetPlayer()->PlayerTalkClass->GetGossipOptionAction(gossipListId), code);
-            return;
         }
 #endif
         else

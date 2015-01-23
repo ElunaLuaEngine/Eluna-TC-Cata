@@ -921,6 +921,8 @@ bool ScriptMgr::OnGossipHello(Player* player, GameObject* go)
 #ifdef ELUNA
     if (sEluna->OnGossipHello(player, go))
         return true;
+    if (sEluna->OnGameObjectUse(player, go))
+        return true;
 #endif
 
     GET_SCRIPT_RET(GameObjectScript, go->GetScriptId(), tmpscript, false);
@@ -1112,7 +1114,7 @@ void ScriptMgr::OnWeatherChange(Weather* weather, WeatherState state, float grad
 {
     ASSERT(weather);
 #ifdef ELUNA
-    sEluna->OnChange(weather, state, grade);
+    sEluna->OnChange(weather, weather->GetZone(), state, grade);
 #endif
 
     GET_SCRIPT(WeatherScript, weather->GetScriptId(), tmpscript);
@@ -1479,6 +1481,8 @@ void ScriptMgr::OnPlayerSpellCast(Player* player, Spell* spell, bool skipCheck)
 void ScriptMgr::OnPlayerLogin(Player* player, bool firstLogin)
 {
 #ifdef ELUNA
+    if (firstLogin)
+        sEluna->OnFirstLogin(player);
     sEluna->OnLogin(player);
 #endif
     FOREACH_SCRIPT(PlayerScript)->OnLogin(player, firstLogin);

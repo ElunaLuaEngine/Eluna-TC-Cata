@@ -94,10 +94,10 @@ class DBCStorage
 #endif
             return (id >= nCount) ? NULL : indexTable.asT[id];
         }
-
+        
+#ifdef ELUNA
         void SetEntry(uint32 id, T* t)
         {
-#ifdef ELUNA
             if (!loaded)
             {
                 for (uint32 i = 0; i < GetNumRows(); ++i)
@@ -109,11 +109,15 @@ class DBCStorage
                 }
                 loaded = true;
             }
-#endif
             data[id] = t;
         }
+#endif
 
+#ifdef ELUNA
+        uint32 GetNumRows() const { return loaded ? data.size() : nCount; }
+#else
         uint32  GetNumRows() const { return nCount; }
+#endif
         char const* GetFormat() const { return fmt; }
         uint32 GetFieldCount() const { return fieldCount; }
 
